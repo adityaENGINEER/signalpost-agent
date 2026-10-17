@@ -5,6 +5,8 @@ from .models import CompanyProfile
 from .registry import NorwegianRegistryClient
 from .builder import ProfileBuilder
 
+from .validator import normalize_org_number, format_org_number
+
 class SignalpostAgent:
     """
     Main Autonomous Agent for finding, verifying, and updating Norwegian company information.
@@ -35,25 +37,32 @@ class SignalpostAgent:
             json.dump(store, f, indent=2, ensure_ascii=False)
 
     def get_existing_profile(self, org_number: str) -> Optional[CompanyProfile]:
+        is_valid, clean_org, _ = normalize_org_number(str(org_number))
+        lookup_key = clean_org if is_valid else str(org_number)
         store = self.load_store()
-        data = store.get(str(org_number))
+        data = store.get(lookup_key)
         if data:
             return CompanyProfile(**data)
         return None
 
     def process_company(self, org_number: str) -> Optional[CompanyProfile]:
         """
-        Takes a 9-digit Norwegian organization number, queries authoritative public sources,
-        attaches evidence, builds the fact model, checks for changes against existing store,
-        and saves the profile.
+        Takes a Norwegian organization number, normalizes whitespace and validates 9 digits,
+        queries authoritative public sources, attaches evidence, builds the fact model,
+        checks for changes against existing store, and saves the profile.
         """
-        clean_org = str(org_number).strip().replace(" ", "")
-        print(f"[*] Agent investigating entity: {clean_org}...")
+        is_valid, clean_org, err_msg = normalize_org_number(org_number)
+        if not is_valid:
+            print(f"[-] {err_msg}")
+            return None
+
+        formatted_display = format_org_number(clean_org)
+        print(f"[*] Agent investigating entity: {formatted_display} (normalized: {clean_org})...")
 
         # 1. Fetch public source data
         raw_data = self.registry.fetch_company(clean_org)
         if not raw_data:
-            print(f"[-] No record found for Norwegian Org: {clean_org}")
+            print(f"[-] No record found for Norwegian Org: {formatted_display}")
             return None
 
         # 2. Check for existing profile for change tracking

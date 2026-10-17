@@ -3,6 +3,7 @@ import json
 import sys
 from agent.core import SignalpostAgent
 from agent.batch_generator import generate_1000_profiles
+from agent.validator import normalize_org_number
 
 def main():
     parser = argparse.ArgumentParser(
@@ -12,7 +13,7 @@ def main():
     group.add_argument(
         "--org",
         type=str,
-        help="9-digit Norwegian Company Organization Number (e.g., 923609016 for Equinor)"
+        help="9-digit Norwegian Company Organization Number (e.g., '923 609 016' or '923609016')"
     )
     group.add_argument(
         "--batch",
@@ -31,7 +32,12 @@ def main():
     agent = SignalpostAgent()
 
     if args.org:
-        profile = agent.process_company(args.org)
+        is_valid, clean_org, err_msg = normalize_org_number(args.org)
+        if not is_valid:
+            print(f"Error: {err_msg}")
+            sys.exit(1)
+
+        profile = agent.process_company(clean_org)
         if profile:
             print("\n" + "="*60)
             print(f" COMPANY PROFILE: {profile.company_name} ({profile.org_number})")
