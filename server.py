@@ -2,17 +2,24 @@ import http.server
 import socketserver
 import json
 import urllib.parse
+import os
+
 from agent.core import SignalpostAgent
 from agent.validator import normalize_org_number, format_org_number
+from agent.intelligence import calculate_data_quality, answer_company_question
+from agent.analytics import get_analytics_metrics
 
 agent = SignalpostAgent()
+
+# Pre-load analytics summary
+cached_analytics = get_analytics_metrics()
 
 HTML_PAGE = """<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Signalpost (NordIntel) — Norwegian Company Intelligence Platform</title>
+    <title>NordIntel — AI-Powered Norwegian Company Intelligence Platform</title>
     <!-- Modern Typography: Inter & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,29 +27,30 @@ HTML_PAGE = """<!DOCTYPE html>
     
     <style>
         :root {
-            --bg-body: #F4F6FA;
+            --bg-primary: #F7F9FC;
             --surface-main: #FFFFFF;
             --surface-subtle: #F8FAFC;
-            --primary-navy: #0F172A;
-            --brand-blue: #2563EB;
-            --brand-blue-hover: #1D4ED8;
-            --brand-blue-light: #EFF6FF;
-            --brand-blue-border: #BFDBFE;
-            --success-green: #059669;
-            --success-bg: #ECFDF5;
-            --text-heading: #0F172A;
-            --text-body: #334155;
-            --text-muted: #64748B;
-            --border-color: #E2E8F0;
+            --primary-navy: #101828;
+            --brand-blue: #3157D5;
+            --brand-blue-hover: #2646b3;
+            --light-blue: #EAF0FF;
+            --primary-text: #172033;
+            --secondary-text: #667085;
+            --border-color: #E6EAF0;
             --border-hover: #CBD5E1;
-            --danger-red: #DC2626;
-            --danger-bg: #FEF2F2;
-            --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
-            --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.03);
+            --success: #16805D;
+            --success-bg: #ECFDF3;
+            --warning: #B7791F;
+            --warning-bg: #FEF3C7;
+            --error: #D92D20;
+            --error-bg: #FEF3F2;
+            --shadow-subtle: 0 1px 3px rgba(16, 24, 40, 0.05);
+            --shadow-card: 0 4px 12px -2px rgba(16, 24, 40, 0.06);
+            --shadow-hover: 0 12px 24px -4px rgba(16, 24, 40, 0.08);
             --radius-sm: 8px;
             --radius-md: 12px;
             --radius-lg: 16px;
+            --sidebar-width: 250px;
         }
 
         * {
@@ -54,186 +62,253 @@ HTML_PAGE = """<!DOCTYPE html>
         }
 
         body {
-            background-color: var(--bg-body);
-            color: var(--text-body);
+            background-color: var(--bg-primary);
+            color: var(--primary-text);
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
-            width: 100%;
             overflow-x: hidden;
         }
 
-        /* Full Width App Header / Navigation */
-        .topbar {
+        /* Sidebar Navigation */
+        .sidebar {
+            width: var(--sidebar-width);
             background: var(--surface-main);
-            border-bottom: 1px solid var(--border-color);
-            position: sticky;
+            border-right: 1px solid var(--border-color);
+            position: fixed;
             top: 0;
+            bottom: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
             z-index: 100;
-            width: 100%;
+            transition: transform 0.25s ease;
         }
 
-        .topbar-content {
-            width: 100%;
-            max-width: 1680px;
-            margin: 0 auto;
-            padding: 0 2rem;
-            height: 68px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .brand-zone {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-        }
-
-        .brand-link {
+        .sidebar-brand {
+            padding: 1.5rem 1.4rem;
             display: flex;
             align-items: center;
             gap: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
             text-decoration: none;
         }
 
-        .brand-symbol {
-            width: 38px;
-            height: 38px;
-            background: linear-gradient(135deg, var(--brand-blue) 0%, #1E40AF 100%);
+        .sidebar-logo {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--brand-blue) 0%, #1a3cb0 100%);
             border-radius: var(--radius-sm);
             display: flex;
             align-items: center;
             justify-content: center;
             color: #ffffff;
-            font-size: 1.2rem;
-            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+            font-size: 1.15rem;
+            box-shadow: 0 2px 8px rgba(49, 87, 213, 0.28);
         }
 
-        .brand-title {
-            font-size: 1.2rem;
+        .sidebar-title {
+            font-size: 1.15rem;
             font-weight: 800;
             color: var(--primary-navy);
             letter-spacing: -0.02em;
         }
 
-        .brand-title span {
-            color: var(--brand-blue);
+        .sidebar-title span { color: var(--brand-blue); }
+
+        .nav-menu {
+            padding: 1.25rem 0.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            flex: 1;
+            overflow-y: auto;
         }
 
-        .brand-tagline {
-            display: none;
-            font-size: 0.82rem;
-            color: var(--text-muted);
-            border-left: 1px solid var(--border-color);
-            padding-left: 1rem;
-            margin-left: 0.5rem;
-        }
-
-        @media (min-width: 900px) {
-            .brand-tagline { display: block; }
-        }
-
-        .topbar-actions {
+        .nav-item {
             display: flex;
             align-items: center;
-            gap: 1.25rem;
+            gap: 0.75rem;
+            padding: 0.65rem 0.95rem;
+            border-radius: var(--radius-sm);
+            color: var(--secondary-text);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
         }
 
-        .country-pill {
+        .nav-item:hover {
+            color: var(--primary-navy);
+            background: var(--bg-primary);
+        }
+
+        .nav-item.active {
+            color: var(--brand-blue);
+            background: var(--light-blue);
+            font-weight: 600;
+        }
+
+        .nav-item .icon { font-size: 1.1rem; width: 20px; }
+
+        .sidebar-footer {
+            padding: 1.2rem;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.78rem;
+            color: var(--secondary-text);
+            background: var(--surface-subtle);
+        }
+
+        /* Main Workspace Container */
+        .workspace {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            width: calc(100% - var(--sidebar-width));
+        }
+
+        /* Top Header Navigation */
+        .topbar {
+            height: 68px;
+            background: var(--surface-main);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2.25rem;
+            position: sticky;
+            top: 0;
+            z-index: 90;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .breadcrumb {
+            font-size: 0.9rem;
+            color: var(--secondary-text);
+            font-weight: 500;
+        }
+
+        .breadcrumb strong { color: var(--primary-navy); }
+
+        .quick-top-search {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            padding: 0.45rem 0.9rem;
+            border-radius: var(--radius-sm);
+            width: 280px;
+        }
+
+        .quick-top-search input {
+            border: none;
+            background: transparent;
+            outline: none;
+            width: 100%;
+            font-size: 0.88rem;
+            color: var(--primary-navy);
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .country-indicator {
             display: flex;
             align-items: center;
             gap: 0.45rem;
-            background: var(--brand-blue-light);
+            background: var(--light-blue);
             color: var(--brand-blue);
-            padding: 0.4rem 0.9rem;
+            padding: 0.35rem 0.85rem;
             border-radius: 9999px;
-            font-size: 0.82rem;
+            font-size: 0.8rem;
             font-weight: 600;
-            border: 1px solid var(--brand-blue-border);
+            border: 1px solid rgba(49, 87, 213, 0.2);
         }
 
         .live-dot {
             width: 7px;
             height: 7px;
             border-radius: 50%;
-            background: var(--success-green);
-            box-shadow: 0 0 6px rgba(5, 150, 105, 0.6);
-            animation: pulse 2s infinite;
+            background: var(--success);
+            box-shadow: 0 0 6px rgba(22, 128, 93, 0.5);
         }
 
-        @keyframes pulse {
-            0% { transform: scale(0.95); opacity: 0.8; }
-            50% { transform: scale(1.3); opacity: 1; }
-            100% { transform: scale(0.95); opacity: 0.8; }
-        }
-
-        /* Full Screen Dashboard Container */
-        .dashboard-container {
-            width: 100%;
-            max-width: 1680px;
-            margin: 0 auto;
-            padding: 1.75rem 2rem 3rem;
+        /* Content Views */
+        .view-content {
+            padding: 2.25rem;
             flex: 1;
+            display: none;
+            animation: fadeIn 0.25s ease-out;
         }
 
-        /* Hero / Search Panel */
-        .search-panel {
+        .view-content.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Search Screen Hero Box */
+        .search-hero {
             background: var(--surface-main);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
-            padding: 2.25rem 2.5rem;
+            padding: 2.5rem;
             margin-bottom: 2rem;
-            box-shadow: var(--shadow-sm);
+            box-shadow: var(--shadow-subtle);
         }
 
-        .search-panel-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .hero-text h1 {
-            font-size: 1.95rem;
-            font-weight: 800;
-            color: var(--primary-navy);
-            letter-spacing: -0.025em;
-            margin-bottom: 0.35rem;
-        }
-
-        .hero-text p {
-            font-size: 0.98rem;
-            color: var(--text-muted);
-            max-width: 800px;
-        }
-
-        .badge-mini {
+        .hero-badge {
             display: inline-flex;
             align-items: center;
             gap: 0.4rem;
             font-size: 0.75rem;
             font-weight: 700;
-            text-transform: uppercase;
             letter-spacing: 0.06em;
+            text-transform: uppercase;
             color: var(--brand-blue);
-            background: var(--brand-blue-light);
-            border: 1px solid var(--brand-blue-border);
-            padding: 0.3rem 0.75rem;
+            background: var(--light-blue);
+            padding: 0.3rem 0.8rem;
             border-radius: 9999px;
-            margin-bottom: 0.6rem;
+            margin-bottom: 0.75rem;
         }
 
-        /* Search Input Row */
-        .search-row {
+        .hero-title {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: var(--primary-navy);
+            letter-spacing: -0.03em;
+            line-height: 1.2;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero-subtitle {
+            font-size: 1.05rem;
+            color: var(--secondary-text);
+            max-width: 820px;
+            line-height: 1.6;
+            margin-bottom: 1.75rem;
+        }
+
+        /* Big Search Input */
+        .search-bar-row {
             display: flex;
             gap: 0.75rem;
             margin-bottom: 1.25rem;
         }
 
-        .input-box {
+        .search-field-box {
             flex: 1;
             display: flex;
             align-items: center;
@@ -241,22 +316,17 @@ HTML_PAGE = """<!DOCTYPE html>
             background: var(--surface-subtle);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
-            padding: 0.75rem 1.25rem;
+            padding: 0.8rem 1.25rem;
             transition: all 0.2s ease;
         }
 
-        .input-box:focus-within {
+        .search-field-box:focus-within {
             background: #ffffff;
             border-color: var(--brand-blue);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+            box-shadow: 0 0 0 4px rgba(49, 87, 213, 0.12);
         }
 
-        .input-flag {
-            font-size: 1.4rem;
-            line-height: 1;
-        }
-
-        .org-input {
+        .input-org {
             width: 100%;
             border: none;
             outline: none;
@@ -268,15 +338,15 @@ HTML_PAGE = """<!DOCTYPE html>
             letter-spacing: 0.04em;
         }
 
-        .org-input::placeholder {
+        .input-org::placeholder {
             font-family: 'Inter', sans-serif;
             font-weight: 400;
-            color: #94A3B8;
-            font-size: 1.05rem;
+            color: #98A2B3;
+            font-size: 1rem;
             letter-spacing: normal;
         }
 
-        .btn-search {
+        .btn-primary {
             background: var(--brand-blue);
             color: #ffffff;
             border: none;
@@ -289,81 +359,44 @@ HTML_PAGE = """<!DOCTYPE html>
             align-items: center;
             gap: 0.5rem;
             transition: all 0.15s ease;
-            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+            box-shadow: 0 2px 6px rgba(49, 87, 213, 0.25);
             white-space: nowrap;
         }
 
-        .btn-search:hover {
-            background: var(--brand-blue-hover);
-        }
+        .btn-primary:hover { background: var(--brand-blue-hover); }
+        .btn-primary:active { transform: scale(0.98); }
 
-        .btn-search:active {
-            transform: scale(0.98);
-        }
-
-        /* Chips & Filter Bar */
-        .quick-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 1rem;
-            font-size: 0.85rem;
-        }
-
-        .chips-list {
+        .chips-line {
             display: flex;
             align-items: center;
             gap: 0.5rem;
             flex-wrap: wrap;
+            font-size: 0.85rem;
         }
 
-        .chip-label {
-            font-weight: 600;
-            color: var(--text-muted);
-            margin-right: 0.25rem;
-        }
-
-        .chip-button {
+        .chip-tag {
             background: var(--surface-subtle);
             border: 1px solid var(--border-color);
-            color: var(--text-body);
-            padding: 0.4rem 0.85rem;
+            color: var(--primary-text);
+            padding: 0.35rem 0.75rem;
             border-radius: var(--radius-sm);
-            font-size: 0.84rem;
+            font-size: 0.82rem;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.15s;
         }
 
-        .chip-button:hover {
-            background: var(--brand-blue-light);
-            border-color: var(--brand-blue-border);
+        .chip-tag:hover {
+            border-color: var(--brand-blue);
             color: var(--brand-blue);
+            background: var(--light-blue);
         }
 
-        .history-trigger {
-            color: var(--brand-blue);
-            background: none;
-            border: none;
-            font-weight: 600;
-            font-size: 0.85rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.35rem;
-        }
-
-        .history-trigger:hover {
-            text-decoration: underline;
-        }
-
-        /* Feedback / Error Message */
-        .feedback-banner {
+        .error-banner {
             display: none;
-            background: var(--danger-bg);
-            border: 1px solid rgba(220, 38, 38, 0.25);
-            color: var(--danger-red);
+            background: var(--error-bg);
+            border: 1px solid rgba(217, 45, 32, 0.25);
+            color: var(--error);
             padding: 0.9rem 1.25rem;
             border-radius: var(--radius-md);
             font-size: 0.92rem;
@@ -373,488 +406,406 @@ HTML_PAGE = """<!DOCTYPE html>
             gap: 0.6rem;
         }
 
-        /* Search History Dropdown / Panel */
-        .history-panel {
-            display: none;
-            margin-top: 1.25rem;
-            padding: 1.1rem 1.25rem;
-            background: var(--surface-subtle);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-        }
-
-        .history-panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.75rem;
-            font-size: 0.82rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .history-items-row {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        .history-tag {
-            background: var(--surface-main);
-            border: 1px solid var(--border-color);
-            padding: 0.35rem 0.75rem;
-            border-radius: var(--radius-sm);
-            font-size: 0.82rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-        }
-
-        .history-tag:hover {
-            border-color: var(--brand-blue);
-            color: var(--brand-blue);
-        }
-
-        /* Loading Skeleton State */
-        .loader-card {
-            display: none;
-            background: var(--surface-main);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 3.5rem 2rem;
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .loader-spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid rgba(37, 99, 235, 0.15);
-            border-top: 3px solid var(--brand-blue);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto 1.1rem;
-        }
-
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-
-        .loader-title {
-            font-size: 1.15rem;
-            font-weight: 700;
-            color: var(--primary-navy);
-            margin-bottom: 0.3rem;
-        }
-
-        .loader-sub {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
-
-        /* Company Profile Full Screen Dashboard */
-        .profile-dashboard {
-            display: none;
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Header Identity Card */
-        .profile-header-card {
+        /* Profile Container Cards */
+        .profile-hero-card {
             background: var(--surface-main);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
             padding: 2.25rem;
             margin-bottom: 1.75rem;
-            box-shadow: var(--shadow-sm);
+            box-shadow: var(--shadow-card);
         }
 
-        .profile-header-flex {
+        .profile-hero-top {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            gap: 2rem;
-            margin-bottom: 1.75rem;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
             flex-wrap: wrap;
         }
 
-        .profile-identity-main {
+        .profile-brand-box {
             display: flex;
             align-items: center;
-            gap: 1.5rem;
+            gap: 1.25rem;
         }
 
-        .avatar-initials {
-            width: 64px;
-            height: 64px;
-            background: linear-gradient(135deg, var(--brand-blue-light) 0%, #DBEAFE 100%);
-            border: 1.5px solid var(--brand-blue-border);
+        .avatar-box {
+            width: 60px;
+            height: 60px;
+            background: var(--light-blue);
+            border: 1px solid rgba(49, 87, 213, 0.25);
             color: var(--brand-blue);
             border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.6rem;
+            font-size: 1.5rem;
             font-weight: 800;
-            flex-shrink: 0;
-            box-shadow: var(--shadow-sm);
         }
 
-        .company-heading-title {
-            font-size: 2.15rem;
+        .comp-title {
+            font-size: 2rem;
             font-weight: 800;
             color: var(--primary-navy);
-            letter-spacing: -0.03em;
-            line-height: 1.2;
-            margin-bottom: 0.5rem;
-        }
-
-        .company-badges-line {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-        }
-
-        .badge-mono-org {
-            font-family: 'JetBrains Mono', monospace;
-            background: var(--surface-subtle);
-            border: 1px solid var(--border-color);
-            color: var(--primary-navy);
-            padding: 0.3rem 0.75rem;
-            border-radius: var(--radius-sm);
-            font-size: 0.95rem;
-            font-weight: 700;
-            letter-spacing: 0.03em;
-        }
-
-        .badge-type-tag {
-            background: var(--brand-blue-light);
-            border: 1px solid var(--brand-blue-border);
-            color: var(--brand-blue);
-            padding: 0.3rem 0.75rem;
-            border-radius: var(--radius-sm);
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .status-pill-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1.2rem;
-            border-radius: 9999px;
-            font-size: 0.88rem;
-            font-weight: 700;
-            letter-spacing: 0.03em;
-            text-transform: uppercase;
-        }
-
-        .status-pill-badge.active {
-            background: var(--success-bg);
-            color: var(--success-green);
-            border: 1px solid rgba(5, 150, 105, 0.3);
-        }
-
-        .status-pill-badge.inactive {
-            background: var(--danger-bg);
-            color: var(--danger-red);
-            border: 1px solid rgba(220, 38, 38, 0.3);
-        }
-
-        /* 4 Key KPI Metric Boxes */
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1.25rem;
-            margin-bottom: 1.75rem;
-        }
-
-        @media (max-width: 1024px) {
-            .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-
-        @media (max-width: 640px) {
-            .kpi-grid { grid-template-columns: 1fr; }
-        }
-
-        .kpi-box {
-            background: var(--surface-subtle);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            padding: 1.2rem 1.4rem;
-        }
-
-        .kpi-title {
-            font-size: 0.78rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: -0.025em;
             margin-bottom: 0.4rem;
         }
 
-        .kpi-value {
-            font-size: 1.45rem;
-            font-weight: 800;
-            color: var(--primary-navy);
-            letter-spacing: -0.02em;
-        }
-
-        /* Executive Briefing Callout */
-        .executive-briefing {
-            background: #F8FAFC;
-            border-left: 4px solid var(--brand-blue);
-            padding: 1.25rem 1.5rem;
-            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-            font-size: 1rem;
-            line-height: 1.6;
-            color: var(--text-body);
-            margin-bottom: 1.75rem;
-        }
-
-        .briefing-label {
-            font-size: 0.78rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.07em;
-            color: var(--brand-blue);
-            margin-bottom: 0.35rem;
+        .comp-sub-row {
             display: flex;
             align-items: center;
-            gap: 0.4rem;
-        }
-
-        /* Actions Toolbar */
-        .toolbar-row {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            border-top: 1px solid var(--border-color);
-            padding-top: 1.4rem;
+            gap: 0.6rem;
             flex-wrap: wrap;
         }
 
-        .tool-btn {
+        .badge-id {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            color: var(--primary-navy);
+            padding: 0.25rem 0.65rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .badge-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.95rem;
+            border-radius: 9999px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-status.active {
+            background: var(--success-bg);
+            color: var(--success);
+            border: 1px solid rgba(22, 128, 93, 0.3);
+        }
+
+        .badge-status.inactive {
+            background: var(--error-bg);
+            color: var(--error);
+            border: 1px solid rgba(217, 45, 32, 0.3);
+        }
+
+        /* 4 KPI Grid */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 1024px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 640px) { .kpi-row { grid-template-columns: 1fr; } }
+
+        .kpi-card {
+            background: var(--surface-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1.1rem 1.25rem;
+        }
+
+        .kpi-lbl {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--secondary-text);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.35rem;
+        }
+
+        .kpi-num {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--primary-navy);
+        }
+
+        /* Summary Box */
+        .summary-callout {
+            background: var(--surface-subtle);
+            border-left: 4px solid var(--brand-blue);
+            padding: 1.1rem 1.4rem;
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            color: #334155;
+        }
+
+        /* Action Toolbar */
+        .action-tray {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1.25rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-tool {
             background: var(--surface-main);
             border: 1px solid var(--border-color);
-            color: var(--text-body);
-            padding: 0.55rem 1.1rem;
+            color: var(--primary-text);
+            padding: 0.5rem 0.95rem;
             border-radius: var(--radius-sm);
-            font-size: 0.88rem;
+            font-size: 0.85rem;
             font-weight: 600;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
             transition: all 0.15s ease;
         }
 
-        .tool-btn:hover {
-            background: var(--surface-subtle);
+        .btn-tool:hover {
+            background: var(--bg-primary);
             border-color: var(--border-hover);
-            color: var(--primary-navy);
         }
 
-        /* Full Screen 3-Column Enterprise Dashboard Layout */
-        .dashboard-grid-3col {
+        /* 3-Column Profile Grid */
+        .profile-3col {
             display: grid;
-            grid-template-columns: 1fr 1fr 1.25fr;
-            gap: 1.75rem;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1.5rem;
             align-items: start;
         }
 
-        @media (max-width: 1280px) {
-            .dashboard-grid-3col {
-                grid-template-columns: 1fr 1fr;
-            }
-            .dashboard-grid-3col > div:nth-child(3) {
-                grid-column: span 2;
-            }
-        }
+        @media (max-width: 1200px) { .profile-3col { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 800px) { .profile-3col { grid-template-columns: 1fr; } }
 
-        @media (max-width: 860px) {
-            .dashboard-grid-3col {
-                grid-template-columns: 1fr;
-            }
-            .dashboard-grid-3col > div:nth-child(3) {
-                grid-column: span 1;
-            }
-        }
-
-        /* Standard Dashboard Card */
-        .dash-card {
+        .dash-box {
             background: var(--surface-main);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
-            padding: 1.75rem;
-            box-shadow: var(--shadow-sm);
-            margin-bottom: 1.75rem;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-card);
+            margin-bottom: 1.5rem;
         }
 
-        .dash-card-header {
+        .dash-box-head {
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            margin-bottom: 1.25rem;
-            padding-bottom: 0.85rem;
+            align-items: center;
+            margin-bottom: 1.1rem;
+            padding-bottom: 0.75rem;
             border-bottom: 1px solid var(--border-color);
         }
 
-        .dash-card-title {
-            font-size: 1.1rem;
+        .dash-box-title {
+            font-size: 1.05rem;
             font-weight: 700;
             color: var(--primary-navy);
             display: flex;
             align-items: center;
-            gap: 0.6rem;
+            gap: 0.5rem;
         }
 
-        .dash-card-title span.icon {
-            font-size: 1.2rem;
+        .prop-item-box {
+            margin-bottom: 0.85rem;
         }
 
-        /* Key-Value Attribute Rows */
-        .prop-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1.1rem;
-        }
-
-        .prop-item {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
-
-        .prop-label {
-            font-size: 0.8rem;
+        .prop-k {
+            font-size: 0.76rem;
             font-weight: 600;
-            color: var(--text-muted);
+            color: var(--secondary-text);
             text-transform: uppercase;
             letter-spacing: 0.04em;
+            margin-bottom: 0.2rem;
         }
 
-        .prop-value {
-            font-size: 1rem;
+        .prop-v {
+            font-size: 0.95rem;
             font-weight: 600;
             color: var(--primary-navy);
             word-break: break-word;
         }
 
-        .prop-value.mono {
-            font-family: 'JetBrains Mono', monospace;
-            letter-spacing: 0.03em;
-        }
+        .prop-v a { color: var(--brand-blue); text-decoration: none; }
+        .prop-v a:hover { text-decoration: underline; }
 
-        .prop-value a {
-            color: var(--brand-blue);
-            text-decoration: none;
-        }
-
-        .prop-value a:hover {
-            text-decoration: underline;
-        }
-
-        .prop-value.empty-val {
-            color: #94A3B8;
-            font-weight: 400;
-            font-style: italic;
-        }
-
-        /* Verified Evidence Feed Cards */
-        .evidence-feed {
-            display: flex;
-            flex-direction: column;
-            gap: 0.85rem;
-        }
-
-        .evidence-card {
+        /* AI Interactive Chat Assistant Box */
+        .chat-container {
+            background: var(--surface-subtle);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
-            padding: 1rem 1.2rem;
-            background: var(--surface-subtle);
-            transition: all 0.15s ease;
-        }
-
-        .evidence-card:hover {
-            background: #ffffff;
-            border-color: var(--brand-blue-border);
-            box-shadow: var(--shadow-sm);
-        }
-
-        .evidence-card-top {
+            padding: 1.1rem;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.4rem;
+            flex-direction: column;
+            gap: 0.75rem;
         }
 
-        .evidence-tag-key {
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            color: var(--brand-blue);
-        }
-
-        .evidence-score-badge {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--success-green);
-            background: var(--success-bg);
-            border: 1px solid rgba(5, 150, 105, 0.2);
-            padding: 0.15rem 0.55rem;
-            border-radius: 4px;
-        }
-
-        .evidence-content-val {
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--primary-navy);
-            margin-bottom: 0.35rem;
-        }
-
-        .evidence-desc {
-            font-size: 0.84rem;
-            color: var(--text-muted);
-            line-height: 1.45;
-            margin-bottom: 0.65rem;
-        }
-
-        .evidence-link-footer {
+        .chat-history {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.78rem;
-            border-top: 1px dashed var(--border-color);
-            padding-top: 0.55rem;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-height: 280px;
+            overflow-y: auto;
         }
 
-        .evidence-link-footer a {
+        .chat-bubble {
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.88rem;
+            line-height: 1.5;
+        }
+
+        .chat-bubble.user {
+            background: var(--light-blue);
             color: var(--brand-blue);
-            text-decoration: none;
+            align-self: flex-end;
             font-weight: 600;
         }
 
-        .evidence-link-footer a:hover {
-            text-decoration: underline;
+        .chat-bubble.agent {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            color: var(--primary-text);
+            align-self: flex-start;
         }
 
-        .evidence-timestamp {
-            color: var(--text-muted);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.74rem;
+        .chat-suggested {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
         }
+
+        .suggested-btn {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            padding: 0.3rem 0.65rem;
+            border-radius: 999px;
+            font-size: 0.76rem;
+            font-weight: 500;
+            cursor: pointer;
+            color: var(--secondary-text);
+            transition: all 0.15s;
+        }
+
+        .suggested-btn:hover {
+            color: var(--brand-blue);
+            border-color: var(--brand-blue);
+        }
+
+        .chat-input-row {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 0.55rem 0.85rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            outline: none;
+            font-size: 0.88rem;
+        }
+
+        .chat-input:focus { border-color: var(--brand-blue); }
+
+        .btn-ask {
+            background: var(--brand-blue);
+            color: #ffffff;
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 0 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Quality Score Circle / Gauge */
+        .quality-header-gauge {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem;
+            background: var(--surface-subtle);
+            border-radius: var(--radius-md);
+            margin-bottom: 1.25rem;
+        }
+
+        .quality-score-large {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--brand-blue);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .check-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.85rem;
+        }
+
+        .check-icon { font-size: 1rem; line-height: 1; }
+        .check-icon.pass { color: var(--success); }
+        .check-icon.fail { color: var(--error); }
+
+        /* Comparison Table View */
+        .comparison-table-wrapper {
+            background: var(--surface-main);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            overflow-x: auto;
+            box-shadow: var(--shadow-card);
+            margin-top: 1.5rem;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        .comparison-table th, .comparison-table td {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .comparison-table th {
+            background: var(--surface-subtle);
+            color: var(--secondary-text);
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        /* Analytics Grid */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 900px) { .analytics-grid { grid-template-columns: 1fr; } }
+
+        .stat-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.86rem;
+        }
+
+        .stat-bar-label { width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .stat-bar-track { flex: 1; background: var(--bg-primary); height: 10px; border-radius: 999px; overflow: hidden; }
+        .stat-bar-fill { background: var(--brand-blue); height: 100%; border-radius: 999px; }
+        .stat-bar-count { width: 40px; text-align: right; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
 
         /* Toast Popup */
-        .toast-msg-box {
+        .toast-box {
             position: fixed;
             bottom: 2rem;
             right: 2rem;
@@ -862,315 +813,522 @@ HTML_PAGE = """<!DOCTYPE html>
             color: #ffffff;
             padding: 0.85rem 1.4rem;
             border-radius: var(--radius-md);
-            font-size: 0.92rem;
+            font-size: 0.9rem;
             font-weight: 600;
-            box-shadow: var(--shadow-lg);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
             display: none;
             align-items: center;
             gap: 0.6rem;
             z-index: 1000;
-            animation: slideIn 0.25s ease-out;
+            animation: slideUp 0.25s ease-out;
         }
 
-        @keyframes slideIn {
-            from { transform: translateY(20px); opacity: 0; }
+        @keyframes slideUp {
+            from { transform: translateY(15px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
-        }
-
-        /* Clean SaaS Footer */
-        .footer-bar {
-            background: var(--surface-main);
-            border-top: 1px solid var(--border-color);
-            padding: 2rem 2rem;
-            margin-top: auto;
-            width: 100%;
-        }
-
-        .footer-inner {
-            max-width: 1680px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.88rem;
-            color: var(--text-muted);
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .footer-inner strong {
-            color: var(--primary-navy);
         }
     </style>
 </head>
 <body>
 
-    <!-- Top Navigation Bar -->
-    <header class="topbar">
-        <div class="topbar-content">
-            <div class="brand-zone">
-                <a href="/" class="brand-link">
-                    <div class="brand-symbol">⚡</div>
-                    <div class="brand-title">Signalpost <span>NordIntel</span></div>
-                </a>
-                <div class="brand-tagline">Autonomous Enterprise Intelligence</div>
-            </div>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <a href="javascript:void(0)" onclick="switchTab('search')" class="sidebar-brand">
+            <div class="sidebar-logo">⚡</div>
+            <div class="sidebar-title">Nord<span>Intel</span></div>
+        </a>
 
-            <div class="topbar-actions">
-                <div class="country-pill">
-                    <span class="live-dot"></span>
-                    <span>🇳🇴</span> Brønnøysundregistrene Live API
-                </div>
-            </div>
+        <nav class="nav-menu">
+            <a href="javascript:void(0)" onclick="switchTab('overview')" class="nav-item" id="nav-overview">
+                <span class="icon">📊</span> Overview
+            </a>
+            <a href="javascript:void(0)" onclick="switchTab('search')" class="nav-item active" id="nav-search">
+                <span class="icon">🔍</span> Company Search
+            </a>
+            <a href="javascript:void(0)" onclick="switchTab('comparison')" class="nav-item" id="nav-comparison">
+                <span class="icon">⚖️</span> Comparison
+            </a>
+            <a href="javascript:void(0)" onclick="switchTab('quality')" class="nav-item" id="nav-quality">
+                <span class="icon">🛡️</span> Data Quality
+            </a>
+            <a href="javascript:void(0)" onclick="switchTab('analytics')" class="nav-item" id="nav-analytics">
+                <span class="icon">📈</span> Analytics
+            </a>
+            <a href="javascript:void(0)" onclick="switchTab('history')" class="nav-item" id="nav-history">
+                <span class="icon">🕒</span> Search History
+            </a>
+            <a href="javascript:void(0)" onclick="switchTab('sources')" class="nav-item" id="nav-sources">
+                <span class="icon">🌐</span> Data Sources
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div>Data: <strong>Brønnøysundregistrene</strong></div>
+            <div style="margin-top: 0.25rem;">Signalpost Agentic Platform</div>
         </div>
-    </header>
+    </aside>
 
-    <!-- Main Full-Width Dashboard -->
-    <main class="dashboard-container">
-
-        <!-- Search & Control Panel -->
-        <section class="search-panel">
-            <div class="search-panel-top">
-                <div class="hero-text">
-                    <div class="badge-mini">
-                        <span>🇳🇴</span> NORWAY BUSINESS INTELLIGENCE
-                    </div>
-                    <h1>Know Every Company Behind the Number.</h1>
-                    <p>Enter any Norwegian organization's 9-digit number to instantly retrieve verified corporate profiles, legal status, NACE classifications, employee headcounts, and registered public records.</p>
+    <!-- Main Workspace Container -->
+    <div class="workspace">
+        
+        <!-- Top Navigation Bar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <div class="breadcrumb" id="currentSectionTitle">
+                    Section / <strong>Company Search</strong>
                 </div>
             </div>
 
-            <!-- Search Row -->
-            <div class="search-row">
-                <div class="input-box">
-                    <span class="input-flag">🇳🇴</span>
+            <div class="topbar-right">
+                <div class="quick-top-search">
+                    <span>🔍</span>
                     <input 
                         type="text" 
-                        id="orgInput" 
-                        class="org-input" 
-                        placeholder="Enter 9-digit organization number (e.g. 923 609 016)" 
+                        placeholder="Quick 9-digit Org lookup..." 
                         maxlength="14"
-                        autocomplete="off"
+                        onkeydown="if(event.key==='Enter'){ quickTopLookup(this.value); this.value=''; }"
                     >
                 </div>
-                <button class="btn-search" id="btnSearch" onclick="handleSearchClick()">
-                    <span>🔍</span> Find Company
-                </button>
-            </div>
-
-            <!-- Chips & Options Bar -->
-            <div class="quick-bar">
-                <div class="chips-list">
-                    <span class="chip-label">Verified Enterprises:</span>
-                    <button class="chip-button" onclick="quickFill('923 609 016')">Equinor ASA (923 609 016)</button>
-                    <button class="chip-button" onclick="quickFill('916 627 939')">Palmera (916 627 939)</button>
-                    <button class="chip-button" onclick="quickFill('989 061 593')">G-Group AS (989 061 593)</button>
-                    <button class="chip-button" onclick="quickFill('988 539 473')">EBE-Data (988 539 473)</button>
+                <div class="country-indicator">
+                    <span class="live-dot"></span>
+                    <span>🇳🇴</span> Norway Live Registry
                 </div>
-                <button class="history-trigger" onclick="toggleHistoryView()">
-                    <span>🕒</span> Recent Searches
-                </button>
             </div>
+        </header>
 
-            <!-- Error Banner -->
-            <div class="feedback-banner" id="errorBanner">
-                <span style="font-size: 1.2rem;">⚠️</span>
-                <span id="errorBannerText">Please enter a valid 9-digit Norwegian organization number.</span>
-            </div>
-
-            <!-- Recent Searches History Tray -->
-            <div class="history-panel" id="historyPanel">
-                <div class="history-panel-header">
-                    <span>Recent Searches</span>
-                    <button style="background:none; border:none; color:var(--danger-red); cursor:pointer; font-size:0.8rem; font-weight:600;" onclick="clearSearchHistory()">Clear All</button>
+        <!-- 1. TAB: COMPANY SEARCH (PRIMARY) -->
+        <section class="view-content active" id="view-search">
+            
+            <!-- Hero Search Component -->
+            <div class="search-hero">
+                <div class="hero-badge">
+                    <span>🇳🇴</span> NORWAY BUSINESS INTELLIGENCE
                 </div>
-                <div class="history-items-row" id="historyItems"></div>
+                <h1 class="hero-title">Know Every Company Behind the Number.</h1>
+                <p class="hero-subtitle">
+                    Search a Norwegian organization's 9-digit number to explore its company profile, registration details, business information, and available public records.
+                </p>
+
+                <!-- Search Input Row -->
+                <div class="search-bar-row">
+                    <div class="search-field-box">
+                        <span style="font-size: 1.35rem;">🇳🇴</span>
+                        <input 
+                            type="text" 
+                            id="orgInput" 
+                            class="input-org" 
+                            placeholder="Enter 9-digit organization number (e.g. 923 609 016)" 
+                            maxlength="14"
+                            autocomplete="off"
+                        >
+                    </div>
+                    <button class="btn-primary" onclick="handleSearchClick()">
+                        <span>🔍</span> Find Company
+                    </button>
+                </div>
+
+                <!-- Chips -->
+                <div class="chips-line">
+                    <span style="color:var(--secondary-text); font-weight:600;">Verified Samples:</span>
+                    <button class="chip-tag" onclick="quickFill('923 609 016')">Equinor ASA (923 609 016)</button>
+                    <button class="chip-tag" onclick="quickFill('916 627 939')">Palmera (916 627 939)</button>
+                    <button class="chip-tag" onclick="quickFill('989 061 593')">G-Group AS (989 061 593)</button>
+                    <button class="chip-tag" onclick="quickFill('988 539 473')">EBE-Data (988 539 473)</button>
+                </div>
+
+                <!-- Inline Error Banner -->
+                <div class="error-banner" id="searchError">
+                    <span style="font-size: 1.15rem;">⚠️</span>
+                    <span id="searchErrorText">Please enter a valid 9-digit Norwegian organization number.</span>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div class="dash-box" id="searchLoader" style="display:none; text-align:center; padding: 3rem 1rem;">
+                <div style="width:36px; height:36px; border:3px solid #E2E8F0; border-top:3px solid var(--brand-blue); border-radius:50%; animation:spin 0.75s linear infinite; margin:0 auto 1rem;"></div>
+                <div style="font-size:1.1rem; font-weight:700; color:var(--primary-navy);">Looking up company information...</div>
+                <div style="font-size:0.88rem; color:var(--secondary-text); margin-top:0.25rem;">Querying Brønnøysundregistrene & extracting verified registry facts</div>
+            </div>
+
+            <!-- Profile Dashboard View -->
+            <div id="companyProfileView" style="display:none;">
+                
+                <!-- Profile Hero Card -->
+                <div class="profile-hero-card">
+                    <div class="profile-hero-top">
+                        <div class="profile-brand-box">
+                            <div class="avatar-box" id="profAvatar">EQ</div>
+                            <div>
+                                <h2 class="comp-title" id="profName">-</h2>
+                                <div class="comp-sub-row">
+                                    <span class="badge-id" id="profOrg">ORG: -</span>
+                                    <span class="badge-id" id="profType" style="color:var(--brand-blue);">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="badge-status active" id="profStatusBadge">
+                            <span class="live-dot"></span>
+                            <span id="profStatusText">ACTIVE & REGISTERED</span>
+                        </div>
+                    </div>
+
+                    <!-- 4 KPIs -->
+                    <div class="kpi-row">
+                        <div class="kpi-card">
+                            <div class="kpi-lbl">Registered Headcount</div>
+                            <div class="kpi-num" id="kpiStaff">-</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-lbl">Registration Date</div>
+                            <div class="kpi-num" id="kpiDate">-</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-lbl">Registered City</div>
+                            <div class="kpi-num" id="kpiCity">-</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-lbl">Data Quality Score</div>
+                            <div class="kpi-num" id="kpiQuality" style="color:var(--brand-blue);">-</div>
+                        </div>
+                    </div>
+
+                    <!-- Executive Briefing -->
+                    <div class="summary-callout" id="profSummary">-</div>
+
+                    <!-- Actions Toolbar -->
+                    <div class="action-tray">
+                        <button class="btn-tool" onclick="copyCurrentOrg()">
+                            <span>📋</span> Copy Org Number
+                        </button>
+                        <button class="btn-tool" onclick="copyCurrentName()">
+                            <span>📋</span> Copy Company Name
+                        </button>
+                        <button class="btn-tool" onclick="addToComparison()">
+                            <span>⚖️</span> Add to Comparison
+                        </button>
+                        <button class="btn-tool" onclick="shareProfile()">
+                            <span>🔗</span> Share Profile
+                        </button>
+                        <button class="btn-tool" onclick="exportJSON()">
+                            <span>📥</span> Export JSON
+                        </button>
+                        <button class="btn-tool" onclick="exportCSV()">
+                            <span>📊</span> Export CSV
+                        </button>
+                        <button class="btn-tool" onclick="window.print()">
+                            <span>🖨️</span> Print / Save PDF
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3 Columns Details -->
+                <div class="profile-3col">
+                    
+                    <!-- Col 1: Registration Details -->
+                    <div class="dash-box">
+                        <div class="dash-box-head">
+                            <h3 class="dash-box-title"><span>📋</span> Registration & Legal</h3>
+                        </div>
+                        <div class="prop-item-box">
+                            <div class="prop-k">Legal Registered Name</div>
+                            <div class="prop-v" id="detailLegalName">-</div>
+                        </div>
+                        <div class="prop-item-box">
+                            <div class="prop-k">Organization Number</div>
+                            <div class="prop-v" id="detailOrgNr" style="font-family:'JetBrains Mono';">-</div>
+                        </div>
+                        <div class="prop-item-box">
+                            <div class="prop-k">Legal Entity Form</div>
+                            <div class="prop-v" id="detailOrgForm">-</div>
+                        </div>
+                        <div class="prop-item-box">
+                            <div class="prop-k">Registration Date</div>
+                            <div class="prop-v" id="detailRegDate">-</div>
+                        </div>
+                        <div class="prop-item-box">
+                            <div class="prop-k">Solvency / Bankruptcy Status</div>
+                            <div class="prop-v" id="detailSolvency">-</div>
+                        </div>
+                    </div>
+
+                    <!-- Col 2: Operations & Location -->
+                    <div class="dash-box">
+                        <div class="dash-box-head">
+                            <h3 class="dash-box-title"><span>📍</span> Industry & Location</h3>
+                        </div>
+                        <div class="prop-item-box">
+                            <div class="prop-k">NACE Classification</div>
+                            <div class="prop-v" id="detailNace">-</div>
+                        </div>
+                        <div class="prop-item-box">
+                            <div class="prop-k">Industry Activity</div>
+                            <div class="prop-v" id="detailIndustry">-</div>
+                        </div>
+                        <div class="prop-item-box">
+                            <div class="prop-k">Headquarters Address</div>
+                            <div class="prop-v" id="detailAddress">-</div>
+                        </div>
+                        <div class="prop-item-box">
+                            <div class="prop-k">Official Website</div>
+                            <div class="prop-v" id="detailWebsite">-</div>
+                        </div>
+                    </div>
+
+                    <!-- Col 3: AI Contextual Assistant & Verified Source Evidence -->
+                    <div class="dash-box">
+                        <div class="dash-box-head">
+                            <h3 class="dash-box-title"><span>🤖</span> AI Company Assistant</h3>
+                            <span style="font-size:0.75rem; font-weight:700; color:var(--brand-blue); background:var(--light-blue); padding:0.2rem 0.5rem; border-radius:4px;">Grounded</span>
+                        </div>
+                        
+                        <div class="chat-container">
+                            <div class="chat-history" id="chatHistory">
+                                <div class="chat-bubble agent">
+                                    Hello! Ask me any specific question about this company's registration, employees, or verified facts.
+                                </div>
+                            </div>
+                            
+                            <div class="chat-suggested">
+                                <button class="suggested-btn" onclick="askQuestion('What does this company do?')">What does it do?</button>
+                                <button class="suggested-btn" onclick="askQuestion('How many employees are registered?')">Employee count?</button>
+                                <button class="suggested-btn" onclick="askQuestion('Is this company active or bankrupt?')">Operating status?</button>
+                                <button class="suggested-btn" onclick="askQuestion('Which company details are missing?')">Missing info?</button>
+                            </div>
+
+                            <div class="chat-input-row">
+                                <input type="text" id="chatInput" class="chat-input" placeholder="Ask about this company..." onkeydown="if(event.key==='Enter') submitChatQuestion();">
+                                <button class="btn-ask" onclick="submitChatQuestion()">Ask</button>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- 2. TAB: OVERVIEW -->
+        <section class="view-content" id="view-overview">
+            <div class="search-hero">
+                <div class="hero-badge">PLATFORM SUMMARY</div>
+                <h1 class="hero-title">Company Intelligence Overview</h1>
+                <p class="hero-subtitle">
+                    Search, understand, compare, and analyze Norwegian company information from official registries.
+                </p>
+                <div style="display:flex; gap:1rem;">
+                    <button class="btn-primary" onclick="switchTab('search')"><span>🔍</span> Search a Company</button>
+                    <button class="btn-tool" onclick="switchTab('analytics')"><span>📊</span> View Dataset Analytics</button>
+                </div>
+            </div>
+
+            <div class="kpi-row">
+                <div class="kpi-card">
+                    <div class="kpi-lbl">Dataset Records Stored</div>
+                    <div class="kpi-num" id="ovTotalRecords">1,001</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-lbl">Active Entities</div>
+                    <div class="kpi-num" id="ovActiveRecords" style="color:var(--success);">1,001</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-lbl">Average Data Quality</div>
+                    <div class="kpi-num" id="ovQuality">93.8%</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-lbl">Source Authority</div>
+                    <div class="kpi-num" style="font-size:1.1rem; color:var(--brand-blue);">Brønnøysundregistrene</div>
+                </div>
+            </div>
+
+            <div class="dash-box">
+                <div class="dash-box-head">
+                    <h3 class="dash-box-title"><span>⚡</span> Platform Highlights</h3>
+                </div>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:1.25rem;">
+                    <div style="background:var(--surface-subtle); padding:1.25rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+                        <div style="font-weight:700; color:var(--primary-navy); margin-bottom:0.4rem;">Zero Hallucination</div>
+                        <div style="font-size:0.88rem; color:var(--secondary-text);">Every fact is directly linked with public authority URLs and verified ISO timestamps.</div>
+                    </div>
+                    <div style="background:var(--surface-subtle); padding:1.25rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+                        <div style="font-weight:700; color:var(--primary-navy); margin-bottom:0.4rem;">Deterministic Quality Engine</div>
+                        <div style="font-size:0.88rem; color:var(--secondary-text);">Mathematical rule-based scoring (60% required, 40% informational) for enterprise compliance.</div>
+                    </div>
+                    <div style="background:var(--surface-subtle); padding:1.25rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+                        <div style="font-weight:700; color:var(--primary-navy); margin-bottom:0.4rem;">AI Contextual Assistant</div>
+                        <div style="font-size:0.88rem; color:var(--secondary-text);">Answers natural-language corporate questions grounded strictly on live registry payloads.</div>
+                    </div>
+                </div>
             </div>
         </section>
 
-        <!-- Loading State -->
-        <div class="loader-card" id="loaderBox">
-            <div class="loader-spinner"></div>
-            <div class="loader-title">Looking up company information...</div>
-            <div class="loader-sub">Querying Brønnøysundregistrene & extracting verified registry facts</div>
-        </div>
-
-        <!-- 3-Column Enterprise Dashboard Profile View -->
-        <div class="profile-dashboard" id="profileDashboard">
-            
-            <!-- Company Identity Header Card -->
-            <div class="profile-header-card">
-                <div class="profile-header-flex">
-                    <div class="profile-identity-main">
-                        <div class="avatar-initials" id="compInitials">EQ</div>
-                        <div>
-                            <h2 class="company-heading-title" id="compName">-</h2>
-                            <div class="company-badges-line">
-                                <span class="badge-mono-org" id="compOrgBadge">ORG: -</span>
-                                <span class="badge-type-tag" id="compTypeTag">-</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="status-pill-badge active" id="compStatusPill">
-                        <span class="live-dot"></span>
-                        <span id="compStatusText">ACTIVE & REGISTERED</span>
-                    </div>
+        <!-- 3. TAB: COMPARISON -->
+        <section class="view-content" id="view-comparison">
+            <div class="dash-box">
+                <div class="dash-box-head">
+                    <h3 class="dash-box-title"><span>⚖️</span> Norwegian Company Comparison</h3>
+                    <button class="btn-tool" onclick="clearComparison()">Clear Comparison</button>
                 </div>
+                <p style="font-size:0.9rem; color:var(--secondary-text); margin-bottom:1.25rem;">
+                    Compare multiple Norwegian companies side-by-side across legal structure, employee headcount, industry activity, and data completeness.
+                </p>
 
-                <!-- 4 KPI Metrics -->
-                <div class="kpi-grid">
-                    <div class="kpi-box">
-                        <div class="kpi-title">Registered Headcount</div>
-                        <div class="kpi-value" id="kpiEmployees">-</div>
-                    </div>
-                    <div class="kpi-box">
-                        <div class="kpi-title">Registration Date</div>
-                        <div class="kpi-value" id="kpiFounded">-</div>
-                    </div>
-                    <div class="kpi-box">
-                        <div class="kpi-title">Headquarters Location</div>
-                        <div class="kpi-value" id="kpiCity">-</div>
-                    </div>
-                    <div class="kpi-box">
-                        <div class="kpi-title">Registry Verification</div>
-                        <div class="kpi-value" style="color: var(--brand-blue);">100% Proven</div>
-                    </div>
-                </div>
-
-                <!-- Executive Briefing -->
-                <div class="executive-briefing">
-                    <div class="briefing-label">
-                        <span>🧠</span> Agent Executive Summary & Explanation
-                    </div>
-                    <p id="compSummaryText">-</p>
-                </div>
-
-                <!-- Quick Action Toolbar -->
-                <div class="toolbar-row">
-                    <button class="tool-btn" onclick="copyOrgNumber()">
-                        <span>📋</span> Copy Org Number
-                    </button>
-                    <button class="tool-btn" onclick="copyCompanyName()">
-                        <span>📋</span> Copy Company Name
-                    </button>
-                    <button class="tool-btn" onclick="shareProfile()">
-                        <span>🔗</span> Share Profile
-                    </button>
-                    <button class="tool-btn" onclick="exportJSON()">
-                        <span>📥</span> Export JSON Data
-                    </button>
-                    <button class="tool-btn" onclick="window.print()">
-                        <span>🖨️</span> Print / Save PDF
-                    </button>
+                <div class="comparison-table-wrapper">
+                    <table class="comparison-table" id="comparisonTable">
+                        <thead>
+                            <tr>
+                                <th>Attribute</th>
+                                <th id="compHead1">Company A</th>
+                                <th id="compHead2">Company B</th>
+                                <th id="compHead3">Company C</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comparisonBody">
+                            <tr><td colspan="4" style="text-align:center; color:var(--secondary-text); padding:2.5rem;">No companies added to comparison yet. Search a company and click "Add to Comparison".</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
+        </section>
 
-            <!-- 3-Column Balanced Dashboard Details -->
-            <div class="dashboard-grid-3col">
-                
-                <!-- Column 1: Legal & Registration Details -->
-                <div class="dash-card">
-                    <div class="dash-card-header">
-                        <h3 class="dash-card-title">
-                            <span class="icon">📋</span> Registration & Legal
-                        </h3>
+        <!-- 4. TAB: DATA QUALITY -->
+        <section class="view-content" id="view-quality">
+            <div class="dash-box">
+                <div class="dash-box-head">
+                    <h3 class="dash-box-title"><span>🛡️</span> Corporate Data Quality Engine</h3>
+                </div>
+                <p style="font-size:0.9rem; color:var(--secondary-text); margin-bottom:1.5rem;">
+                    Deterministic compliance validation formula: 4 Required Fields (60% total weight) + 4 Informational Fields (40% total weight).
+                </p>
+
+                <div class="quality-header-gauge">
+                    <div>
+                        <div style="font-size:0.82rem; font-weight:700; color:var(--secondary-text); text-transform:uppercase;">Evaluated Record Score</div>
+                        <div style="font-size:1.05rem; font-weight:700; color:var(--primary-navy);" id="qualitySubjectName">Current Company</div>
                     </div>
-                    <div class="prop-list">
-                        <div class="prop-item">
-                            <span class="prop-label">Full Legal Name</span>
-                            <span class="prop-value" id="rowLegalName">-</span>
-                        </div>
-                        <div class="prop-item">
-                            <span class="prop-label">Organization Number</span>
-                            <span class="prop-value mono" id="rowOrgNr">-</span>
-                        </div>
-                        <div class="prop-item">
-                            <span class="prop-label">Corporate Form</span>
-                            <span class="prop-value" id="rowOrgForm">-</span>
-                        </div>
-                        <div class="prop-item">
-                            <span class="prop-label">Official Registration Date</span>
-                            <span class="prop-value" id="rowRegDate">-</span>
-                        </div>
-                        <div class="prop-item">
-                            <span class="prop-label">Operational Solvency</span>
-                            <span class="prop-value" id="rowSolvency">-</span>
-                        </div>
-                    </div>
+                    <div class="quality-score-large" id="qualityScoreVal">--%</div>
                 </div>
 
-                <!-- Column 2: Industry, Headcount & Location -->
-                <div class="dash-card">
-                    <div class="dash-card-header">
-                        <h3 class="dash-card-title">
-                            <span class="icon">📍</span> Operations & Location
-                        </h3>
-                    </div>
-                    <div class="prop-list">
-                        <div class="prop-item">
-                            <span class="prop-label">NACE Classification</span>
-                            <span class="prop-value" id="rowNaceCode">-</span>
-                        </div>
-                        <div class="prop-item">
-                            <span class="prop-label">Industry Activity</span>
-                            <span class="prop-value" id="rowNaceDesc">-</span>
-                        </div>
-                        <div class="prop-item">
-                            <span class="prop-label">Registered Office Address</span>
-                            <span class="prop-value" id="rowBusinessAddr">-</span>
-                        </div>
-                        <div class="prop-item">
-                            <span class="prop-label">Municipality (Kommune)</span>
-                            <span class="prop-value" id="rowMunicipality">-</span>
-                        </div>
-                        <div class="prop-item">
-                            <span class="prop-label">Official Website</span>
-                            <span class="prop-value" id="rowWebsite">-</span>
-                        </div>
-                    </div>
+                <div id="qualityChecksList">
+                    <div style="color:var(--secondary-text); font-size:0.9rem;">Perform a company search to inspect its granular rule-by-rule data quality audit report.</div>
                 </div>
-
-                <!-- Column 3: Verified Registry Evidence Stream -->
-                <div class="dash-card">
-                    <div class="dash-card-header">
-                        <h3 class="dash-card-title">
-                            <span class="icon">🛡️</span> Verified Public Evidence
-                        </h3>
-                        <span style="font-size:0.75rem; font-weight:700; color:var(--success-green); background:var(--success-bg); padding:0.2rem 0.5rem; border-radius:4px;">100% Attributed</span>
-                    </div>
-                    <div class="evidence-feed" id="evidenceFeed"></div>
-                </div>
-
             </div>
+        </section>
 
-        </div>
+        <!-- 5. TAB: ANALYTICS -->
+        <section class="view-content" id="view-analytics">
+            <div class="dash-box">
+                <div class="dash-box-head">
+                    <h3 class="dash-box-title"><span>📈</span> Dataset Analytics & Distribution</h3>
+                    <span style="font-size:0.82rem; font-weight:600; color:var(--brand-blue); background:var(--light-blue); padding:0.25rem 0.65rem; border-radius:4px;">1,001 Verified Entities</span>
+                </div>
+                <p style="font-size:0.9rem; color:var(--secondary-text); margin-bottom:1.5rem;">
+                    Real distributions derived from the official 1,000+ Norwegian company dataset stored in this platform.
+                </p>
 
-    </main>
+                <div class="analytics-grid">
+                    <!-- Top Industries -->
+                    <div style="background:var(--surface-subtle); padding:1.4rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+                        <div style="font-size:0.95rem; font-weight:700; color:var(--primary-navy); margin-bottom:1rem;">Top NACE Industries</div>
+                        <div id="analyticsIndustryBars"></div>
+                    </div>
 
-    <!-- Toast Notification -->
-    <div class="toast-msg-box" id="toastBox">
-        <span id="toastIcon">✓</span>
-        <span id="toastText">Copied to clipboard!</span>
+                    <!-- Top Entity Types -->
+                    <div style="background:var(--surface-subtle); padding:1.4rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+                        <div style="font-size:0.95rem; font-weight:700; color:var(--primary-navy); margin-bottom:1rem;">Corporate Legal Forms</div>
+                        <div id="analyticsTypeBars"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 6. TAB: SEARCH HISTORY -->
+        <section class="view-content" id="view-history">
+            <div class="dash-box">
+                <div class="dash-box-head">
+                    <h3 class="dash-box-title"><span>🕒</span> Search History & Audits</h3>
+                    <button class="btn-tool" onclick="clearSearchHistory()">Clear All History</button>
+                </div>
+                <p style="font-size:0.9rem; color:var(--secondary-text); margin-bottom:1.25rem;">
+                    Locally stored session searches for fast instant re-opening without redundant network calls.
+                </p>
+                <div id="fullHistoryList" style="display:flex; flex-direction:column; gap:0.65rem;"></div>
+            </div>
+        </section>
+
+        <!-- 7. TAB: DATA SOURCES -->
+        <section class="view-content" id="view-sources">
+            <div class="dash-box">
+                <div class="dash-box-head">
+                    <h3 class="dash-box-title"><span>🌐</span> Authoritative Public Data Sources</h3>
+                </div>
+                <p style="font-size:0.92rem; color:var(--secondary-text); margin-bottom:1.5rem;">
+                    NordIntel adheres to zero-hallucination standards. All records originate directly from Norway's official statutory registers.
+                </p>
+
+                <div style="display:flex; flex-direction:column; gap:1.2rem;">
+                    <div style="background:var(--surface-subtle); padding:1.25rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+                        <div style="font-size:1.05rem; font-weight:700; color:var(--primary-navy); margin-bottom:0.3rem;">1. Brønnøysundregistrene (Enhetsregisteret)</div>
+                        <div style="font-size:0.88rem; color:var(--secondary-text); margin-bottom:0.6rem;">Provides legal names, 9-digit org numbers, registration dates, corporate forms, and registered business locations.</div>
+                        <a href="https://data.brreg.no/enhetsregisteret/api" target="_blank" style="color:var(--brand-blue); font-size:0.85rem; font-weight:600; text-decoration:none;">🔗 Open Government API: data.brreg.no/enhetsregisteret/api</a>
+                    </div>
+
+                    <div style="background:var(--surface-subtle); padding:1.25rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+                        <div style="font-size:1.05rem; font-weight:700; color:var(--primary-navy); margin-bottom:0.3rem;">2. NAV & Aa-registeret (Employee Registry)</div>
+                        <div style="font-size:0.88rem; color:var(--secondary-text); margin-bottom:0.6rem;">Official public counts of registered salaried personnel and staff headcounts.</div>
+                        <a href="https://virksomhet.brreg.no" target="_blank" style="color:var(--brand-blue); font-size:0.85rem; font-weight:600; text-decoration:none;">🔗 Official Portal Reference: virksomhet.brreg.no</a>
+                    </div>
+
+                    <div style="background:var(--surface-subtle); padding:1.25rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+                        <div style="font-size:1.05rem; font-weight:700; color:var(--primary-navy); margin-bottom:0.3rem;">3. Konkursregisteret (Insolvency Register)</div>
+                        <div style="font-size:0.88rem; color:var(--secondary-text); margin-bottom:0.6rem;">National bankruptcy and liquidation status tracking for operational solvency confirmation.</div>
+                        <a href="https://www.brreg.no/om-oss/registrene-vare/konkursregisteret/" target="_blank" style="color:var(--brand-blue); font-size:0.85rem; font-weight:600; text-decoration:none;">🔗 Official Authority Registry: Konkursregisteret</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </div>
 
-    <!-- Full-Width Footer -->
-    <footer class="footer-bar">
-        <div class="footer-inner">
-            <div>
-                Data Source: <strong>Brønnøysundregistrene (Enhetsregisteret)</strong> • Official Open Government API
-            </div>
-            <div>
-                Signalpost <strong>NordIntel</strong> • Enterprise Company Intelligence Platform
-            </div>
-        </div>
-    </footer>
+    <!-- Notification Toast -->
+    <div class="toast-box" id="toast">
+        <span id="toastIcon">✓</span>
+        <span id="toastText">Action completed successfully</span>
+    </div>
 
     <script>
         const ERROR_MESSAGE = "Please enter a valid 9-digit Norwegian organization number.";
         const inputElem = document.getElementById('orgInput');
         let currentProfileData = null;
+        let comparisonList = [];
 
-        // Normalization and validation
+        // Tab Navigation Switcher
+        function switchTab(tabId) {
+            document.querySelectorAll('.view-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            const targetView = document.getElementById(`view-${tabId}`);
+            const targetNav = document.getElementById(`nav-${tabId}`);
+            if (targetView) targetView.classList.add('active');
+            if (targetNav) targetNav.classList.add('active');
+
+            const titleMap = {
+                'overview': 'Platform Overview',
+                'search': 'Company Search',
+                'comparison': 'Company Comparison',
+                'quality': 'Data Quality Checker',
+                'analytics': 'Dataset Analytics',
+                'history': 'Search History',
+                'sources': 'Authoritative Data Sources'
+            };
+            document.getElementById('currentSectionTitle').innerHTML = `Section / <strong>${titleMap[tabId] || 'Dashboard'}</strong>`;
+
+            if (tabId === 'history') renderFullHistory();
+            if (tabId === 'analytics') renderAnalyticsUI();
+        }
+
+        // Validation & Normalization
         function validateAndNormalizeOrg(raw) {
             if (!raw) return { isValid: false, normalized: null, error: ERROR_MESSAGE };
             const stripped = raw.replace(/\\s+/g, '');
@@ -1193,7 +1351,7 @@ HTML_PAGE = """<!DOCTYPE html>
             return parts.join(' ');
         }
 
-        // Auto-spacing while typing
+        // Intelligent auto-spacing while typing
         inputElem.addEventListener('input', function(e) {
             const cursorStart = this.selectionStart;
             const prevVal = this.value;
@@ -1214,12 +1372,12 @@ HTML_PAGE = """<!DOCTYPE html>
         // Paste support
         inputElem.addEventListener('paste', function(e) {
             e.preventDefault();
-            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-            const cleanDigits = pastedText.replace(/\\s+/g, '');
-            if (/^\\d+$/.test(cleanDigits)) {
-                this.value = formatOrgDisplay(cleanDigits);
+            const text = (e.clipboardData || window.clipboardData).getData('text');
+            const clean = text.replace(/\\s+/g, '');
+            if (/^\\d+$/.test(clean)) {
+                this.value = formatOrgDisplay(clean);
             } else {
-                this.value = pastedText.trim();
+                this.value = text.trim();
             }
         });
 
@@ -1227,21 +1385,21 @@ HTML_PAGE = """<!DOCTYPE html>
             if (e.key === 'Enter') handleSearchClick();
         });
 
-        function showError(msg) {
-            const banner = document.getElementById('errorBanner');
-            document.getElementById('errorBannerText').innerText = msg;
-            banner.style.display = 'flex';
+        function showSearchError(msg) {
+            const b = document.getElementById('searchError');
+            document.getElementById('searchErrorText').innerText = msg;
+            b.style.display = 'flex';
         }
 
-        function hideError() {
-            document.getElementById('errorBanner').style.display = 'none';
+        function hideSearchError() {
+            document.getElementById('searchError').style.display = 'none';
         }
 
         function showToast(msg) {
-            const toast = document.getElementById('toastBox');
+            const t = document.getElementById('toast');
             document.getElementById('toastText').innerText = msg;
-            toast.style.display = 'flex';
-            setTimeout(() => { toast.style.display = 'none'; }, 2800);
+            t.style.display = 'flex';
+            setTimeout(() => { t.style.display = 'none'; }, 2600);
         }
 
         function quickFill(org) {
@@ -1249,77 +1407,79 @@ HTML_PAGE = """<!DOCTYPE html>
             handleSearchClick();
         }
 
-        // Local Search History
+        function quickTopLookup(val) {
+            switchTab('search');
+            inputElem.value = val;
+            handleSearchClick();
+        }
+
+        // Local Storage for Recent Searches
         function getHistory() {
-            try {
-                return JSON.parse(localStorage.getItem('nordintel_searches') || '[]');
-            } catch (e) { return []; }
+            try { return JSON.parse(localStorage.getItem('nordintel_history') || '[]'); }
+            catch(e) { return []; }
         }
 
         function saveHistory(org, name) {
             try {
                 let h = getHistory();
                 h = h.filter(x => x.org !== org);
-                h.unshift({ org, name });
-                if (h.length > 8) h = h.slice(0, 8);
-                localStorage.setItem('nordintel_searches', JSON.stringify(h));
-                renderHistory();
-            } catch (e) {}
+                h.unshift({ org, name, timestamp: Date.now() });
+                if (h.length > 20) h = h.slice(0, 20);
+                localStorage.setItem('nordintel_history', JSON.stringify(h));
+            } catch(e) {}
         }
 
         function clearSearchHistory() {
-            localStorage.removeItem('nordintel_searches');
-            renderHistory();
-            document.getElementById('historyPanel').style.display = 'none';
+            localStorage.removeItem('nordintel_history');
+            renderFullHistory();
             showToast("Search history cleared");
         }
 
-        function renderHistory() {
+        function renderFullHistory() {
             const list = getHistory();
-            const container = document.getElementById('historyItems');
+            const container = document.getElementById('fullHistoryList');
             container.innerHTML = '';
             if (list.length === 0) {
-                container.innerHTML = '<span style="color:var(--text-muted); font-size:0.85rem;">No recent searches yet.</span>';
+                container.innerHTML = '<div style="color:var(--secondary-text); padding:1rem;">No recent searches recorded yet.</div>';
                 return;
             }
             list.forEach(item => {
-                const tag = document.createElement('div');
-                tag.className = 'history-tag';
-                tag.innerHTML = `<span>🏢</span> <strong>${item.name || 'Company'}</strong> (${formatOrgDisplay(item.org)})`;
-                tag.onclick = () => quickFill(item.org);
-                container.appendChild(tag);
+                const row = document.createElement('div');
+                row.style = 'background:var(--surface-subtle); padding:0.9rem 1.2rem; border-radius:var(--radius-sm); border:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; cursor:pointer;';
+                row.innerHTML = `
+                    <div>
+                        <div style="font-weight:700; color:var(--primary-navy);">${item.name || 'Company'}</div>
+                        <div style="font-family:'JetBrains Mono'; font-size:0.85rem; color:var(--brand-blue);">ORG: ${formatOrgDisplay(item.org)}</div>
+                    </div>
+                    <button class="btn-tool" style="font-size:0.8rem;">Open Profile ➔</button>
+                `;
+                row.onclick = () => {
+                    switchTab('search');
+                    quickFill(item.org);
+                };
+                container.appendChild(row);
             });
         }
 
-        function toggleHistoryView() {
-            const panel = document.getElementById('historyPanel');
-            if (panel.style.display === 'block') {
-                panel.style.display = 'none';
-            } else {
-                renderHistory();
-                panel.style.display = 'block';
-            }
-        }
-
         async function handleSearchClick() {
-            hideError();
+            hideSearchError();
             const raw = inputElem.value;
             const validation = validateAndNormalizeOrg(raw);
             if (!validation.isValid) {
-                showError(validation.error);
+                showSearchError(validation.error);
                 return;
             }
             inputElem.value = formatOrgDisplay(validation.normalized);
-            await searchCompany(validation.normalized);
+            await executeSearch(validation.normalized);
         }
 
-        async function searchCompany(normalizedOrg) {
-            const loader = document.getElementById('loaderBox');
-            const dashboard = document.getElementById('profileDashboard');
-
+        async function executeSearch(normalizedOrg) {
+            const loader = document.getElementById('searchLoader');
+            const profileView = document.getElementById('companyProfileView');
+            
             loader.style.display = 'block';
-            dashboard.style.display = 'none';
-            hideError();
+            profileView.style.display = 'none';
+            hideSearchError();
 
             try {
                 const res = await fetch(`/api/search?org=${encodeURIComponent(normalizedOrg)}`);
@@ -1327,175 +1487,335 @@ HTML_PAGE = """<!DOCTYPE html>
                 loader.style.display = 'none';
 
                 if (data.error) {
-                    showError(data.error);
+                    showSearchError(data.error);
                     return;
                 }
 
                 currentProfileData = data;
                 saveHistory(normalizedOrg, data.company_name);
 
-                // Populate Header
-                const name = data.company_name || 'Unnamed Enterprise';
-                document.getElementById('compName').innerText = name;
+                // Populate Profile
+                const name = data.company_name || 'Unnamed Company';
+                document.getElementById('profName').innerText = name;
                 
                 const initials = name.split(' ').map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'NO';
-                document.getElementById('compInitials').innerText = initials;
+                document.getElementById('profAvatar').innerText = initials;
 
                 const formattedOrg = formatOrgDisplay(data.org_number);
-                document.getElementById('compOrgBadge').innerText = `ORG: ${formattedOrg}`;
-                document.getElementById('compTypeTag').innerText = data.org_type_description || data.org_type || 'Commercial Entity';
+                document.getElementById('profOrg').innerText = `ORG: ${formattedOrg}`;
+                document.getElementById('profType').innerText = data.org_type_description || data.org_type || 'Commercial Entity';
 
-                // Status Pill
-                const pill = document.getElementById('compStatusPill');
-                const pillTxt = document.getElementById('compStatusText');
+                // Status
+                const badge = document.getElementById('profStatusBadge');
+                const badgeTxt = document.getElementById('profStatusText');
                 if (data.is_bankrupt) {
-                    pill.className = 'status-pill-badge inactive';
-                    pillTxt.innerText = 'BANKRUPT';
+                    badge.className = 'badge-status inactive';
+                    badgeTxt.innerText = 'BANKRUPT';
                 } else if (!data.is_active) {
-                    pill.className = 'status-pill-badge inactive';
-                    pillTxt.innerText = 'IN LIQUIDATION / INACTIVE';
+                    badge.className = 'badge-status inactive';
+                    badgeTxt.innerText = 'IN LIQUIDATION / INACTIVE';
                 } else {
-                    pill.className = 'status-pill-badge active';
-                    pillTxt.innerText = 'ACTIVE & REGISTERED';
+                    badge.className = 'badge-status active';
+                    badgeTxt.innerText = 'ACTIVE & REGISTERED';
                 }
 
-                // 4 KPIs
-                document.getElementById('kpiEmployees').innerText = (data.employee_count !== null && data.employee_count !== undefined)
-                    ? Number(data.employee_count).toLocaleString() + ' Personnel'
+                // KPIs
+                document.getElementById('kpiStaff').innerText = (data.employee_count !== null && data.employee_count !== undefined) 
+                    ? Number(data.employee_count).toLocaleString() + ' Personnel' 
                     : 'Unlisted';
-                document.getElementById('kpiFounded').innerText = data.registration_date || 'N/A';
+                document.getElementById('kpiDate').innerText = data.registration_date || 'N/A';
                 
                 let city = 'Norway';
                 if (data.business_address && data.business_address.poststed) {
                     city = data.business_address.poststed;
                 } else if (data.facts) {
-                    const addrFact = data.facts.find(f => f.key === 'business_address');
-                    if (addrFact && addrFact.value) {
-                        const parts = addrFact.value.split(',');
+                    const factAddr = data.facts.find(f => f.key === 'business_address');
+                    if (factAddr && factAddr.value) {
+                        const parts = factAddr.value.split(',');
                         if (parts.length >= 3) city = parts[parts.length - 3].trim();
                     }
                 }
                 document.getElementById('kpiCity').innerText = city;
 
-                // Briefing
-                document.getElementById('compSummaryText').innerText = data.agent_summary || 'Verified corporate profile extracted from official registers.';
+                // Summary
+                document.getElementById('profSummary').innerText = data.agent_summary || 'Verified profile extracted from official Norwegian records.';
 
-                // Column 1: Legal & Registration
-                document.getElementById('rowLegalName').innerText = name;
-                document.getElementById('rowOrgNr').innerText = formattedOrg;
-                document.getElementById('rowOrgForm').innerText = data.org_type_description ? `${data.org_type_description} (${data.org_type || ''})` : 'Not available';
-                document.getElementById('rowRegDate').innerText = data.registration_date || 'Not available';
-                document.getElementById('rowSolvency').innerText = data.is_bankrupt ? 'Bankrupt' : (data.is_active ? 'Active / In Good Standing' : 'In Liquidation');
+                // Column 1
+                document.getElementById('detailLegalName').innerText = name;
+                document.getElementById('detailOrgNr').innerText = formattedOrg;
+                document.getElementById('detailOrgForm').innerText = data.org_type_description ? `${data.org_type_description} (${data.org_type || ''})` : 'Not available';
+                document.getElementById('detailRegDate').innerText = data.registration_date || 'Not available';
+                document.getElementById('detailSolvency').innerText = data.is_bankrupt ? 'Bankrupt' : (data.is_active ? 'Active & In Good Standing' : 'In Liquidation');
 
-                // Column 2: Operations & Location
-                document.getElementById('rowNaceCode').innerText = data.industry_code || 'Not available in data source';
-                document.getElementById('rowNaceDesc').innerText = data.industry_description || 'General Corporate Sector';
+                // Column 2
+                document.getElementById('detailNace').innerText = data.industry_code || 'Not available';
+                document.getElementById('detailIndustry').innerText = data.industry_description || 'General Corporate Sector';
                 
-                const bAddr = data.business_address || {};
                 let fullAddr = 'Not available in current data source';
-                let kommune = 'Not available';
+                const bAddr = data.business_address || {};
                 if (bAddr && (bAddr.adresse || bAddr.poststed)) {
                     const street = Array.isArray(bAddr.adresse) ? bAddr.adresse.join(', ') : (bAddr.adresse || '');
                     fullAddr = [street, bAddr.postnummer, bAddr.poststed].filter(Boolean).join(', ');
-                    kommune = [bAddr.poststed, bAddr.kommune].filter(Boolean).join(', ');
                 } else if (data.facts) {
                     const factAddr = data.facts.find(f => f.key === 'business_address');
                     if (factAddr && factAddr.value) fullAddr = factAddr.value;
                 }
-                document.getElementById('rowBusinessAddr').innerText = fullAddr;
-                document.getElementById('rowMunicipality').innerText = kommune;
+                document.getElementById('detailAddress').innerText = fullAddr;
 
-                const websiteBox = document.getElementById('rowWebsite');
+                const webElem = document.getElementById('detailWebsite');
                 if (data.website) {
-                    const cleanUrl = data.website.startsWith('http') ? data.website : `https://${data.website}`;
-                    websiteBox.innerHTML = `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer">${data.website}</a>`;
+                    const url = data.website.startsWith('http') ? data.website : `https://${data.website}`;
+                    webElem.innerHTML = `<a href="${url}" target="_blank">${data.website}</a>`;
                 } else {
-                    websiteBox.innerHTML = `<span class="empty-val">Not registered with authority</span>`;
+                    webElem.innerHTML = '<span style="color:var(--secondary-text); font-style:italic;">Not registered with authority</span>';
                 }
 
-                // Column 3: Evidence Feed
-                const feed = document.getElementById('evidenceFeed');
-                feed.innerHTML = '';
-                const facts = data.facts || [];
-                facts.forEach(fact => {
-                    const card = document.createElement('div');
-                    card.className = 'evidence-card';
-                    const dateFormatted = fact.retrieved_at ? fact.retrieved_at.replace('T', ' ').substring(0, 16) + ' UTC' : 'Live';
-                    let val = fact.value;
-                    if (fact.key === 'org_number') val = formatOrgDisplay(val);
+                // Run Quality check on this entity
+                fetchQualityReport(normalizedOrg);
 
-                    card.innerHTML = `
-                        <div class="evidence-card-top">
-                            <span class="evidence-tag-key">${fact.key.replace(/_/g, ' ')}</span>
-                            <span class="evidence-score-badge">${Math.round((fact.confidence || 1.0) * 100)}% Proven</span>
-                        </div>
-                        <div class="evidence-content-val">${val}</div>
-                        ${fact.explanation ? `<div class="evidence-desc">${fact.explanation}</div>` : ''}
-                        <div class="evidence-link-footer">
-                            <a href="${fact.source_url}" target="_blank" rel="noopener noreferrer">
-                                🔗 ${fact.source_name}
-                            </a>
-                            <span class="evidence-timestamp">${dateFormatted}</span>
-                        </div>
-                    `;
-                    feed.appendChild(card);
-                });
+                profileView.style.display = 'block';
+                profileView.scrollIntoView({ behavior: 'smooth' });
 
-                dashboard.style.display = 'block';
-                dashboard.scrollIntoView({ behavior: 'smooth' });
-
-            } catch (err) {
+            } catch(e) {
                 loader.style.display = 'none';
-                showError("We couldn't retrieve company information right now. Please try again.");
+                showSearchError("We couldn't retrieve company information right now. Please try again.");
             }
         }
 
-        // Actions
-        function copyOrgNumber() {
+        // Data Quality Checker Function
+        async function fetchQualityReport(org) {
+            try {
+                const res = await fetch(`/api/quality?org=${org}`);
+                const q = await res.json();
+                document.getElementById('kpiQuality').innerText = `${q.score}% (${q.rating})`;
+                document.getElementById('qualitySubjectName').innerText = `${currentProfileData.company_name} (${formatOrgDisplay(org)})`;
+                document.getElementById('qualityScoreVal').innerText = `${q.score}%`;
+
+                const container = document.getElementById('qualityChecksList');
+                container.innerHTML = '';
+                q.checks.forEach(c => {
+                    const div = document.createElement('div');
+                    div.className = 'check-item';
+                    div.innerHTML = `
+                        <span class="check-icon ${c.passed ? 'pass' : 'fail'}">${c.passed ? '✓' : '✗'}</span>
+                        <div style="flex:1;">
+                            <div style="font-weight:700; color:var(--primary-navy);">${c.rule} <span style="font-size:0.75rem; color:var(--secondary-text); font-weight:500;">(${c.impact})</span></div>
+                            <div style="font-size:0.82rem; color:var(--secondary-text);">${c.description}</div>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            } catch(e) {}
+        }
+
+        // AI Chat Assistant
+        async function askQuestion(qText) {
+            if (!currentProfileData) {
+                showToast("Please search a company first");
+                return;
+            }
+            appendChat('user', qText);
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ org: currentProfileData.org_number, question: qText })
+                });
+                const data = await res.json();
+                appendChat('agent', `${data.answer} <br><span style="font-size:0.75rem; color:var(--secondary-text); margin-top:4px; display:inline-block;">Source: ${data.source}</span>`);
+            } catch(e) {
+                appendChat('agent', "AI insights are currently unavailable. You can still explore the retrieved company information.");
+            }
+        }
+
+        function submitChatQuestion() {
+            const input = document.getElementById('chatInput');
+            const q = input.value.trim();
+            if (!q) return;
+            input.value = '';
+            askQuestion(q);
+        }
+
+        function appendChat(role, htmlContent) {
+            const hist = document.getElementById('chatHistory');
+            const bubble = document.createElement('div');
+            bubble.className = `chat-bubble ${role}`;
+            bubble.innerHTML = htmlContent;
+            hist.appendChild(bubble);
+            hist.scrollTop = hist.scrollHeight;
+        }
+
+        // Comparison Functionality
+        function addToComparison() {
             if (!currentProfileData) return;
-            const formatted = formatOrgDisplay(currentProfileData.org_number);
-            navigator.clipboard.writeText(formatted).then(() => {
-                showToast(`Copied ${formatted} to clipboard`);
+            if (comparisonList.some(x => x.org_number === currentProfileData.org_number)) {
+                showToast("Company is already in comparison");
+                switchTab('comparison');
+                return;
+            }
+            if (comparisonList.length >= 3) {
+                comparisonList.shift(); // keep max 3 companies
+            }
+            comparisonList.push(currentProfileData);
+            renderComparisonTable();
+            showToast(`Added ${currentProfileData.company_name} to comparison`);
+            switchTab('comparison');
+        }
+
+        function clearComparison() {
+            comparisonList = [];
+            renderComparisonTable();
+            showToast("Comparison cleared");
+        }
+
+        function renderComparisonTable() {
+            const tbody = document.getElementById('comparisonBody');
+            if (comparisonList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--secondary-text); padding:2.5rem;">No companies added to comparison yet. Search a company and click "Add to Comparison".</td></tr>';
+                return;
+            }
+
+            // Update headers
+            for (let i = 0; i < 3; i++) {
+                const th = document.getElementById(`compHead${i+1}`);
+                if (comparisonList[i]) {
+                    th.innerHTML = `<strong>${comparisonList[i].company_name}</strong><br><span style="font-family:'JetBrains Mono'; font-size:0.75rem;">${formatOrgDisplay(comparisonList[i].org_number)}</span>`;
+                } else {
+                    th.innerText = `Company ${String.fromCharCode(65+i)}`;
+                }
+            }
+
+            const rows = [
+                { label: 'Organization Number', fn: c => formatOrgDisplay(c.org_number) },
+                { label: 'Legal Form', fn: c => c.org_type_description || c.org_type || 'N/A' },
+                { label: 'Operating Status', fn: c => c.is_bankrupt ? 'Bankrupt' : (c.is_active ? 'Active' : 'Inactive') },
+                { label: 'Registration Date', fn: c => c.registration_date || 'N/A' },
+                { label: 'Registered Headcount', fn: c => c.employee_count !== null ? `${c.employee_count.toLocaleString()} Staff` : 'Unlisted' },
+                { label: 'Industry Sector', fn: c => c.industry_description || 'N/A' },
+                { label: 'Location / City', fn: c => (c.business_address && c.business_address.poststed) ? c.business_address.poststed : 'Norway' }
+            ];
+
+            tbody.innerHTML = '';
+            rows.forEach(r => {
+                const tr = document.createElement('tr');
+                let colsHtml = `<td style="font-weight:600; color:var(--secondary-text);">${r.label}</td>`;
+                for (let i = 0; i < 3; i++) {
+                    const c = comparisonList[i];
+                    colsHtml += `<td style="font-weight:600; color:var(--primary-navy);">${c ? r.fn(c) : '-'}</td>`;
+                }
+                tr.innerHTML = colsHtml;
+                tbody.appendChild(tr);
             });
         }
 
-        function copyCompanyName() {
+        // Analytics UI
+        async function renderAnalyticsUI() {
+            try {
+                const res = await fetch('/api/analytics');
+                const data = await res.json();
+                
+                // Industries
+                const indBox = document.getElementById('analyticsIndustryBars');
+                indBox.innerHTML = '';
+                const indEntries = Object.entries(data.top_industries);
+                const maxInd = Math.max(...indEntries.map(x => x[1]), 1);
+                indEntries.forEach(([name, count]) => {
+                    const pct = Math.round((count / maxInd) * 100);
+                    indBox.innerHTML += `
+                        <div class="stat-bar-row">
+                            <span class="stat-bar-label" title="${name}">${name}</span>
+                            <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%;"></div></div>
+                            <span class="stat-bar-count">${count}</span>
+                        </div>
+                    `;
+                });
+
+                // Types
+                const typeBox = document.getElementById('analyticsTypeBars');
+                typeBox.innerHTML = '';
+                const typeEntries = Object.entries(data.top_types);
+                const maxType = Math.max(...typeEntries.map(x => x[1]), 1);
+                typeEntries.forEach(([name, count]) => {
+                    const pct = Math.round((count / maxType) * 100);
+                    typeBox.innerHTML += `
+                        <div class="stat-bar-row">
+                            <span class="stat-bar-label" title="${name}">${name}</span>
+                            <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%; background:#059669;"></div></div>
+                            <span class="stat-bar-count">${count}</span>
+                        </div>
+                    `;
+                });
+            } catch(e) {}
+        }
+
+        // Action Toolbar Functions
+        function copyCurrentOrg() {
             if (!currentProfileData) return;
-            navigator.clipboard.writeText(currentProfileData.company_name).then(() => {
-                showToast(`Copied "${currentProfileData.company_name}" to clipboard`);
-            });
+            const f = formatOrgDisplay(currentProfileData.org_number);
+            navigator.clipboard.writeText(f).then(() => showToast(`Copied ${f} to clipboard`));
+        }
+
+        function copyCurrentName() {
+            if (!currentProfileData) return;
+            navigator.clipboard.writeText(currentProfileData.company_name).then(() => showToast(`Copied "${currentProfileData.company_name}"`));
         }
 
         function shareProfile() {
             if (!currentProfileData) return;
-            const shareData = {
+            const data = {
                 title: `${currentProfileData.company_name} — Intelligence Profile`,
-                text: `Verified corporate profile for ${currentProfileData.company_name} (Org Nr: ${formatOrgDisplay(currentProfileData.org_number)})`,
+                text: `Verified profile for ${currentProfileData.company_name} (${formatOrgDisplay(currentProfileData.org_number)})`,
                 url: window.location.href
             };
             if (navigator.share) {
-                navigator.share(shareData).catch(() => {});
+                navigator.share(data).catch(() => {});
             } else {
-                navigator.clipboard.writeText(window.location.href).then(() => {
-                    showToast("Profile URL copied to clipboard");
-                });
+                navigator.clipboard.writeText(window.location.href).then(() => showToast("Profile URL copied to clipboard"));
             }
         }
 
         function exportJSON() {
             if (!currentProfileData) return;
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentProfileData, null, 2));
-            const dlAnchor = document.createElement('a');
-            dlAnchor.setAttribute("href", dataStr);
-            dlAnchor.setAttribute("download", `${currentProfileData.org_number}_profile.json`);
-            document.body.appendChild(dlAnchor);
-            dlAnchor.click();
-            dlAnchor.remove();
+            const str = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentProfileData, null, 2));
+            const a = document.createElement('a');
+            a.href = str;
+            a.download = `NordIntel_${currentProfileData.org_number}.json`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
             showToast("JSON company record exported");
         }
 
+        function exportCSV() {
+            if (!currentProfileData) return;
+            const p = currentProfileData;
+            const csvRows = [
+                ["Field", "Value"],
+                ["Company Name", `"${(p.company_name||'').replace(/"/g, '""')}"`],
+                ["Organization Number", `"${p.org_number}"`],
+                ["Organization Form", `"${(p.org_type_description||'').replace(/"/g, '""')}"`],
+                ["Registration Date", `"${p.registration_date||''}"`],
+                ["Active Status", p.is_active ? "Active" : "Inactive"],
+                ["Bankrupt", p.is_bankrupt ? "Yes" : "No"],
+                ["Employee Headcount", p.employee_count !== null ? p.employee_count : ""],
+                ["Industry Code", `"${p.industry_code||''}"`],
+                ["Industry Description", `"${(p.industry_description||'').replace(/"/g, '""')}"`],
+                ["Official Website", `"${p.website||''}"`],
+                ["Data Source", "Brønnøysundregistrene (Norway)"]
+            ];
+            const csvContent = "data:text/csv;charset=utf-8," + csvRows.map(e => e.join(",")).join("\\n");
+            const a = document.createElement('a');
+            a.href = encodeURI(csvContent);
+            a.download = `NordIntel_${p.org_number}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            showToast("CSV company record exported");
+        }
+
+        // Initialize on load
         window.addEventListener('DOMContentLoaded', () => {
-            renderHistory();
+            renderAnalyticsUI();
         });
     </script>
 </body>
@@ -1530,6 +1850,57 @@ class AgentServerHandler(http.server.BaseHTTPRequestHandler):
                 self.wfile.write(profile.model_dump_json().encode("utf-8"))
             else:
                 self.wfile.write(json.dumps({"error": "No company was found for this organization number."}).encode("utf-8"))
+        elif parsed.path == "/api/quality":
+            query = urllib.parse.parse_qs(parsed.query)
+            raw_org = query.get("org", [None])[0]
+            is_valid, clean_org, _ = normalize_org_number(raw_org)
+            if is_valid:
+                p = agent.get_existing_profile(clean_org)
+                if p:
+                    q = calculate_data_quality(p.model_dump())
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps(q).encode("utf-8"))
+                    return
+            self.send_response(404)
+            self.end_headers()
+        elif parsed.path == "/api/analytics":
+            metrics = get_analytics_metrics()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(metrics).encode("utf-8"))
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def do_POST(self):
+        parsed = urllib.parse.urlparse(self.path)
+        if parsed.path == "/api/chat":
+            content_length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_length).decode('utf-8')
+            try:
+                data = json.loads(body)
+                raw_org = data.get("org")
+                question = data.get("question", "")
+                is_valid, clean_org, _ = normalize_org_number(raw_org)
+                if is_valid:
+                    p = agent.get_existing_profile(clean_org)
+                    if p:
+                        ans = answer_company_question(p.model_dump(), question)
+                        self.send_response(200)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(json.dumps(ans).encode("utf-8"))
+                        return
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "Profile not found"}).encode("utf-8"))
+            except Exception as e:
+                self.send_response(500)
+                self.end_headers()
         else:
             self.send_response(404)
             self.end_headers()
@@ -1538,7 +1909,7 @@ if __name__ == "__main__":
     PORT = 8000
     server_address = ('127.0.0.1', PORT)
     httpd = socketserver.TCPServer(server_address, AgentServerHandler)
-    print(f"[*] Signalpost NordIntel Full-Screen Platform running at http://localhost:{PORT}")
+    print(f"[*] NordIntel SaaS Platform running at http://localhost:{PORT}")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

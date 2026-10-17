@@ -39,7 +39,7 @@
         "value": "EQUINOR ASA",
         "source_name": "Brønnøysundregistrene (Enhetsregisteret)",
         "source_url": "https://virksomhet.brreg.no/nb/oppslag/enheter/923609016",
-        "retrieved_at": "2026-10-17T07:28:36.441024+00:00",
+        "retrieved_at": "2026-10-17T08:16:12.763454+00:00",
         "confidence": 1.0,
         "explanation": "Official registered entity name as recorded in the Central Coordinating Register for Legal Entities."
       },
@@ -48,7 +48,7 @@
         "value": "923609016",
         "source_name": "Brønnøysundregistrene (Enhetsregisteret)",
         "source_url": "https://data.brreg.no/enhetsregisteret/api/enheter/923609016",
-        "retrieved_at": "2026-10-17T07:28:36.441024+00:00",
+        "retrieved_at": "2026-10-17T08:16:12.763454+00:00",
         "confidence": 1.0,
         "explanation": "Unique 9-digit official Norwegian legal entity identifier."
       },
@@ -57,7 +57,7 @@
         "value": "Allmennaksjeselskap (ASA)",
         "source_name": "Brønnøysundregistrene (Enhetsregisteret)",
         "source_url": "https://virksomhet.brreg.no/nb/oppslag/enheter/923609016",
-        "retrieved_at": "2026-10-17T07:28:36.441024+00:00",
+        "retrieved_at": "2026-10-17T08:16:12.763454+00:00",
         "confidence": 1.0,
         "explanation": "Corporate entity structure type: Allmennaksjeselskap."
       },
@@ -66,7 +66,7 @@
         "value": "1995-03-12",
         "source_name": "Brønnøysundregistrene (Enhetsregisteret)",
         "source_url": "https://virksomhet.brreg.no/nb/oppslag/enheter/923609016",
-        "retrieved_at": "2026-10-17T07:28:36.441024+00:00",
+        "retrieved_at": "2026-10-17T08:16:12.763454+00:00",
         "confidence": 1.0,
         "explanation": "Official date of registration in the Norwegian legal entity register."
       },
@@ -75,7 +75,7 @@
         "value": "06.100 - Utvinning av råolje",
         "source_name": "Brønnøysundregistrene (SSB Standard Industrial Classification)",
         "source_url": "https://virksomhet.brreg.no/nb/oppslag/enheter/923609016",
-        "retrieved_at": "2026-10-17T07:28:36.441024+00:00",
+        "retrieved_at": "2026-10-17T08:16:12.763454+00:00",
         "confidence": 1.0,
         "explanation": "Primary NACE activity classification: Utvinning av råolje."
       },
@@ -84,7 +84,7 @@
         "value": 21231,
         "source_name": "NAV / Brønnøysundregistrene Aa-registeret",
         "source_url": "https://virksomhet.brreg.no/nb/oppslag/enheter/923609016",
-        "retrieved_at": "2026-10-17T07:28:36.441024+00:00",
+        "retrieved_at": "2026-10-17T08:16:12.763454+00:00",
         "confidence": 1.0,
         "explanation": "Number of reported employees registered in the official Aa-register."
       },
@@ -93,7 +93,7 @@
         "value": "Forusbeen 50, 4035, STAVANGER, STAVANGER, Norge",
         "source_name": "Brønnøysundregistrene (Enhetsregisteret)",
         "source_url": "https://virksomhet.brreg.no/nb/oppslag/enheter/923609016",
-        "retrieved_at": "2026-10-17T07:28:36.441024+00:00",
+        "retrieved_at": "2026-10-17T08:16:12.763454+00:00",
         "confidence": 1.0,
         "explanation": "Physical headquarters/registered office location."
       },
@@ -102,7 +102,7 @@
         "value": "Active / In Good Standing",
         "source_name": "Brønnøysundregistrene Konkursregisteret",
         "source_url": "https://virksomhet.brreg.no/nb/oppslag/enheter/923609016",
-        "retrieved_at": "2026-10-17T07:28:36.441024+00:00",
+        "retrieved_at": "2026-10-17T08:16:12.763454+00:00",
         "confidence": 1.0,
         "explanation": "Legal solvency and operating condition per Norwegian register."
       },
@@ -111,13 +111,13 @@
         "value": "www.equinor.com",
         "source_name": "Brønnøysundregistrene (Entity Self-Reported)",
         "source_url": "https://virksomhet.brreg.no/nb/oppslag/enheter/923609016",
-        "retrieved_at": "2026-10-17T07:28:36.441024+00:00",
+        "retrieved_at": "2026-10-17T08:16:12.763454+00:00",
         "confidence": 0.95,
         "explanation": "Official website registered by the company with the authority."
       }
     ],
     "agent_summary": "EQUINOR ASA (Org Nr: 923609016) is a Norwegian Allmennaksjeselskap specializing in Utvinning av råolje, employing 21231 registered personnel. Headquartered in STAVANGER, operating status is currently ACTIVE.",
-    "last_updated": "2026-10-17T07:28:36.441024+00:00",
+    "last_updated": "2026-10-17T08:16:12.763454+00:00",
     "history": []
   },
   "916627939": {
@@ -357,7 +357,7 @@
         "value": "-EBE- DATA Eyolf Berg",
         "source_name": "Brønnøysundregistrene (Enhetsregisteret)",
         "source_url": "https://virksomhet.brreg.no/nb/oppslag/enheter/988539473",
-        "retrieved_at": "2026-10-17T07:18:51.625608+00:00",
+        "retrieved_at": "2026-10-17T08:07:13.506122+00:00",
         "confidence": 1.0,
         "explanation": "Official registered entity name as recorded in the Central Coordinating Register for Legal Entities."
       },
@@ -366,7 +366,7 @@
         "value": "988539473",
         "source_name": "Brønnøysundregistrene (Enhetsregisteret)",
         "source_url": "https://data.brreg.no/enhetsregisteret/api/enheter/988539473",
-        "retrieved_at": "2026-10-17T07:18:51.625608+00:00",
+        "retrieved_at": "2026-10-17T08:07:13.506122+00:00",
         "confidence": 1.0,
         "explanation": "Unique 9-digit official Norwegian legal entity identifier."
       },
@@ -375,7 +375,7 @@
         "value": "Enkeltpersonforetak (ENK)",
         "source_name": "Brønnøysundregistrene (Enhetsregisteret)",
         "source_url": "https://virksomhet.brreg.no/nb/oppslag/enheter/988539473",
-        "retrieved_at": "2026-10-17T07:18:51.625608+00:00",
+        "retrieved_at": "2026-10-17T08:07:13.506122+00:00",
         "confidence": 1.0,
         "explanation": "Corporate entity structure type: Enkeltpersonforetak."
       },
@@ -384,7 +384,7 @@
         "value": "2005-08-20",
         "source_name": "Brønnøysundregistrene (Enhetsregisteret)",
         "source_url": "https://virksomhet.brreg.no/nb/oppslag/enheter/988539473",
-        "retrieved_at": "2026-10-17T07:18:51.625608+00:00",
+        "retrieved_at": "2026-10-17T08:07:13.506122+00:00",
         "confidence": 1.0,
         "explanation": "Official date of registration in the Norwegian legal entity register."
       },
@@ -393,7 +393,7 @@
         "value": "62.200 - Konsulentvirksomhet tilknyttet informasjonsteknologi og forvaltning og drift av it-systemer",
         "source_name": "Brønnøysundregistrene (SSB Standard Industrial Classification)",
         "source_url": "https://virksomhet.brreg.no/nb/oppslag/enheter/988539473",
-        "retrieved_at": "2026-10-17T07:18:51.625608+00:00",
+        "retrieved_at": "2026-10-17T08:07:13.506122+00:00",
         "confidence": 1.0,
         "explanation": "Primary NACE activity classification: Konsulentvirksomhet tilknyttet informasjonsteknologi og forvaltning og drift av it-systemer."
       },
@@ -402,7 +402,7 @@
         "value": "Bekkeliveien 5, 3470, SLEMMESTAD, ASKER, Norge",
         "source_name": "Brønnøysundregistrene (Enhetsregisteret)",
         "source_url": "https://virksomhet.brreg.no/nb/oppslag/enheter/988539473",
-        "retrieved_at": "2026-10-17T07:18:51.625608+00:00",
+        "retrieved_at": "2026-10-17T08:07:13.506122+00:00",
         "confidence": 1.0,
         "explanation": "Physical headquarters/registered office location."
       },
@@ -411,7 +411,7 @@
         "value": "Active / In Good Standing",
         "source_name": "Brønnøysundregistrene Konkursregisteret",
         "source_url": "https://virksomhet.brreg.no/nb/oppslag/enheter/988539473",
-        "retrieved_at": "2026-10-17T07:18:51.625608+00:00",
+        "retrieved_at": "2026-10-17T08:07:13.506122+00:00",
         "confidence": 1.0,
         "explanation": "Legal solvency and operating condition per Norwegian register."
       },
@@ -420,13 +420,13 @@
         "value": "www.ebe-data.com",
         "source_name": "Brønnøysundregistrene (Entity Self-Reported)",
         "source_url": "https://virksomhet.brreg.no/nb/oppslag/enheter/988539473",
-        "retrieved_at": "2026-10-17T07:18:51.625608+00:00",
+        "retrieved_at": "2026-10-17T08:07:13.506122+00:00",
         "confidence": 0.95,
         "explanation": "Official website registered by the company with the authority."
       }
     ],
     "agent_summary": "-EBE- DATA Eyolf Berg (Org Nr: 988539473) is a Norwegian Enkeltpersonforetak specializing in Konsulentvirksomhet tilknyttet informasjonsteknologi og forvaltning og drift av it-systemer, with unlisted headcount. Headquartered in SLEMMESTAD, operating status is currently ACTIVE.",
-    "last_updated": "2026-10-17T07:18:51.626605+00:00",
+    "last_updated": "2026-10-17T08:07:13.506122+00:00",
     "history": []
   },
   "934551435": {
