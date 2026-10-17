@@ -20,38 +20,53 @@ def generate_1000_profiles(output_file: str = "output/norway_1000_profiles.json"
     
     profiles: List[Dict] = []
     seen_orgs = set()
-    page = 0
     size = 100
 
-    pbar = tqdm(total=target_count, desc="Processing Profiles", unit="company")
+    # Resume from existing profiles in store if available
+    existing_store = agent.load_store()
+    for k, v in existing_store.items():
+        if k not in seen_orgs:
+            seen_orgs.add(k)
+            profiles.append(v)
+
+    pbar = tqdm(total=target_count, desc="Processing Profiles", unit="company", initial=len(profiles))
+    page = len(profiles) // size
 
     while len(profiles) < target_count:
         batch = registry.fetch_batch_companies(page=page, size=size)
         if not batch:
             print(f"[!] No more records at page {page}, retrying...")
-            time.sleep(2)
+            time.sleep(1)
             page += 1
-            if page > 50:
+            if page > 60:
                 break
             continue
 
+        new_batch_profiles = []
         for item in batch:
             org_nr = item.get("organisasjonsnummer")
             if not org_nr or org_nr in seen_orgs:
                 continue
             seen_orgs.add(org_nr)
 
-            # Build and verify profile
             profile = ProfileBuilder.build_profile(item)
-            profiles.append(profile.model_dump())
-            agent.save_to_store(profile)
+            p_dict = profile.model_dump()
+            profiles.append(p_dict)
+            new_batch_profiles.append(profile)
             pbar.update(1)
 
             if len(profiles) >= target_count:
                 break
 
+        # Batch update store once per page (much faster)
+        store = agent.load_store()
+        for p in new_batch_profiles:
+            store[p.org_number] = p.model_dump()
+        with open(agent.storage_path, "w", encoding="utf-8") as f:
+            json.dump(store, f, ensure_ascii=False)
+
         page += 1
-        time.sleep(0.1) # Gentle rate-limiting
+        time.sleep(0.05)
 
     pbar.close()
 
