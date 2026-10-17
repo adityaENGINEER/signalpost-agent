@@ -13,36 +13,36 @@ HTML_PAGE = """<!DOCTYPE html>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Signalpost (NordIntel) — Norwegian Company Intelligence Platform</title>
-    <!-- Google Fonts: Inter & JetBrains Mono for pristine SaaS aesthetics -->
+    <!-- Modern Typography: Inter & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            /* Palette as specified in design brief */
-            --bg-primary: #F7F9FC;
+            --bg-body: #F4F6FA;
             --surface-main: #FFFFFF;
-            --primary-navy: #101828;
-            --brand-blue: #3157D5;
-            --secondary-blue: #EAF0FF;
-            --brand-blue-hover: #2646b3;
-            --success-green: #16805D;
-            --success-green-bg: #ECFDF3;
-            --text-heading: #101828;
-            --text-body: #344054;
-            --text-muted: #667085;
-            --border-color: #E6EAF0;
-            --border-focus: #3157D5;
-            --danger-red: #D92D20;
-            --danger-bg: #FEF3F2;
-            --shadow-subtle: 0 1px 3px rgba(16, 24, 40, 0.05), 0 1px 2px rgba(16, 24, 40, 0.03);
-            --shadow-card: 0 4px 20px -2px rgba(16, 24, 40, 0.06), 0 2px 6px -1px rgba(16, 24, 40, 0.03);
-            --shadow-elevated: 0 12px 32px -4px rgba(16, 24, 40, 0.08), 0 4px 12px -2px rgba(16, 24, 40, 0.04);
+            --surface-subtle: #F8FAFC;
+            --primary-navy: #0F172A;
+            --brand-blue: #2563EB;
+            --brand-blue-hover: #1D4ED8;
+            --brand-blue-light: #EFF6FF;
+            --brand-blue-border: #BFDBFE;
+            --success-green: #059669;
+            --success-bg: #ECFDF5;
+            --text-heading: #0F172A;
+            --text-body: #334155;
+            --text-muted: #64748B;
+            --border-color: #E2E8F0;
+            --border-hover: #CBD5E1;
+            --danger-red: #DC2626;
+            --danger-bg: #FEF2F2;
+            --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+            --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.03);
             --radius-sm: 8px;
             --radius-md: 12px;
             --radius-lg: 16px;
-            --radius-pill: 9999px;
         }
 
         * {
@@ -54,1039 +54,1113 @@ HTML_PAGE = """<!DOCTYPE html>
         }
 
         body {
-            background-color: var(--bg-primary);
+            background-color: var(--bg-body);
             color: var(--text-body);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            line-height: 1.5;
+            width: 100%;
+            overflow-x: hidden;
         }
 
-        /* Top Navigation Bar */
-        .navbar {
+        /* Full Width App Header / Navigation */
+        .topbar {
             background: var(--surface-main);
             border-bottom: 1px solid var(--border-color);
             position: sticky;
             top: 0;
             z-index: 100;
+            width: 100%;
         }
 
-        .nav-inner {
-            max-width: 1160px;
+        .topbar-content {
+            width: 100%;
+            max-width: 1680px;
             margin: 0 auto;
-            padding: 0 1.5rem;
+            padding: 0 2rem;
             height: 68px;
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
 
-        .brand-block {
+        .brand-zone {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .brand-link {
             display: flex;
             align-items: center;
             gap: 0.75rem;
             text-decoration: none;
         }
 
-        .brand-icon-box {
+        .brand-symbol {
             width: 38px;
             height: 38px;
-            background: linear-gradient(135deg, var(--brand-blue) 0%, #1a3cb0 100%);
+            background: linear-gradient(135deg, var(--brand-blue) 0%, #1E40AF 100%);
             border-radius: var(--radius-sm);
             display: flex;
             align-items: center;
             justify-content: center;
             color: #ffffff;
-            font-size: 1.15rem;
-            box-shadow: 0 2px 8px rgba(49, 87, 213, 0.28);
+            font-size: 1.2rem;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
         }
 
-        .brand-name {
-            font-size: 1.15rem;
-            font-weight: 700;
+        .brand-title {
+            font-size: 1.2rem;
+            font-weight: 800;
             color: var(--primary-navy);
             letter-spacing: -0.02em;
         }
 
-        .brand-name span {
+        .brand-title span {
             color: var(--brand-blue);
         }
 
-        .nav-links {
-            display: flex;
-            align-items: center;
-            gap: 1.75rem;
-        }
-
-        .nav-link {
+        .brand-tagline {
+            display: none;
+            font-size: 0.82rem;
             color: var(--text-muted);
-            text-decoration: none;
-            font-size: 0.92rem;
-            font-weight: 500;
-            transition: color 0.15s ease;
-            cursor: pointer;
+            border-left: 1px solid var(--border-color);
+            padding-left: 1rem;
+            margin-left: 0.5rem;
         }
 
-        .nav-link:hover, .nav-link.active {
-            color: var(--primary-navy);
+        @media (min-width: 900px) {
+            .brand-tagline { display: block; }
         }
 
-        .norway-indicator {
+        .topbar-actions {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            background: var(--secondary-blue);
+            gap: 1.25rem;
+        }
+
+        .country-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            background: var(--brand-blue-light);
             color: var(--brand-blue);
-            padding: 0.35rem 0.85rem;
-            border-radius: var(--radius-pill);
+            padding: 0.4rem 0.9rem;
+            border-radius: 9999px;
             font-size: 0.82rem;
             font-weight: 600;
-            border: 1px solid rgba(49, 87, 213, 0.15);
+            border: 1px solid var(--brand-blue-border);
         }
 
-        /* Main Container */
-        .main-wrapper {
-            max-width: 1160px;
-            margin: 0 auto;
-            padding: 2.75rem 1.5rem 4rem;
-            flex: 1;
+        .live-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--success-green);
+            box-shadow: 0 0 6px rgba(5, 150, 105, 0.6);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.3); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+
+        /* Full Screen Dashboard Container */
+        .dashboard-container {
             width: 100%;
+            max-width: 1680px;
+            margin: 0 auto;
+            padding: 1.75rem 2rem 3rem;
+            flex: 1;
         }
 
-        /* Hero Header */
-        .hero-section {
-            text-align: center;
-            max-width: 760px;
-            margin: 0 auto 2.5rem;
-        }
-
-        .hero-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            background: #ffffff;
-            border: 1px solid var(--border-color);
-            color: var(--text-muted);
-            padding: 0.35rem 0.9rem;
-            border-radius: var(--radius-pill);
-            font-size: 0.78rem;
-            font-weight: 700;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            box-shadow: var(--shadow-subtle);
-            margin-bottom: 1.1rem;
-        }
-
-        .hero-heading {
-            font-size: 2.75rem;
-            font-weight: 800;
-            color: var(--primary-navy);
-            letter-spacing: -0.03em;
-            line-height: 1.2;
-            margin-bottom: 0.9rem;
-        }
-
-        .hero-subheading {
-            font-size: 1.1rem;
-            color: var(--text-muted);
-            line-height: 1.6;
-        }
-
-        /* Search Component */
-        .search-container {
-            max-width: 720px;
-            margin: 0 auto 1.5rem;
-        }
-
-        .search-card {
+        /* Hero / Search Panel */
+        .search-panel {
             background: var(--surface-main);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
-            padding: 0.6rem;
+            padding: 2.25rem 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .search-panel-top {
             display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .hero-text h1 {
+            font-size: 1.95rem;
+            font-weight: 800;
+            color: var(--primary-navy);
+            letter-spacing: -0.025em;
+            margin-bottom: 0.35rem;
+        }
+
+        .hero-text p {
+            font-size: 0.98rem;
+            color: var(--text-muted);
+            max-width: 800px;
+        }
+
+        .badge-mini {
+            display: inline-flex;
             align-items: center;
-            box-shadow: var(--shadow-card);
-            transition: all 0.2s ease;
+            gap: 0.4rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--brand-blue);
+            background: var(--brand-blue-light);
+            border: 1px solid var(--brand-blue-border);
+            padding: 0.3rem 0.75rem;
+            border-radius: 9999px;
+            margin-bottom: 0.6rem;
         }
 
-        .search-card:focus-within {
-            border-color: var(--border-focus);
-            box-shadow: 0 0 0 4px rgba(49, 87, 213, 0.12), var(--shadow-card);
+        /* Search Input Row */
+        .search-row {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
         }
 
-        .search-input-wrapper {
+        .input-box {
+            flex: 1;
             display: flex;
             align-items: center;
             gap: 0.85rem;
-            flex: 1;
-            padding: 0.4rem 0.8rem;
+            background: var(--surface-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.75rem 1.25rem;
+            transition: all 0.2s ease;
         }
 
-        .flag-icon {
+        .input-box:focus-within {
+            background: #ffffff;
+            border-color: var(--brand-blue);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .input-flag {
             font-size: 1.4rem;
             line-height: 1;
         }
 
-        .search-input {
+        .org-input {
             width: 100%;
             border: none;
             outline: none;
-            font-size: 1.15rem;
+            font-size: 1.2rem;
+            font-weight: 600;
             color: var(--primary-navy);
-            font-weight: 500;
             background: transparent;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 0.04em;
         }
 
-        .search-input::placeholder {
-            color: #98A2B3;
+        .org-input::placeholder {
+            font-family: 'Inter', sans-serif;
             font-weight: 400;
+            color: #94A3B8;
+            font-size: 1.05rem;
+            letter-spacing: normal;
         }
 
-        .find-btn {
+        .btn-search {
             background: var(--brand-blue);
             color: #ffffff;
             border: none;
             border-radius: var(--radius-md);
-            padding: 0.85rem 1.8rem;
-            font-size: 0.95rem;
-            font-weight: 600;
+            padding: 0 2.2rem;
+            font-size: 1rem;
+            font-weight: 700;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            transition: background-color 0.15s ease, transform 0.1s ease;
+            transition: all 0.15s ease;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
             white-space: nowrap;
         }
 
-        .find-btn:hover {
+        .btn-search:hover {
             background: var(--brand-blue-hover);
         }
 
-        .find-btn:active {
+        .btn-search:active {
             transform: scale(0.98);
         }
 
-        /* Validation / Inline Error Message */
-        .inline-feedback {
-            display: none;
-            max-width: 720px;
-            margin: 0.75rem auto 1.5rem;
-            padding: 0.85rem 1.1rem;
-            border-radius: var(--radius-md);
-            font-size: 0.9rem;
-            font-weight: 500;
+        /* Chips & Filter Bar */
+        .quick-bar {
             display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .chips-list {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .chip-label {
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-right: 0.25rem;
+        }
+
+        .chip-button {
+            background: var(--surface-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-body);
+            padding: 0.4rem 0.85rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.84rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .chip-button:hover {
+            background: var(--brand-blue-light);
+            border-color: var(--brand-blue-border);
+            color: var(--brand-blue);
+        }
+
+        .history-trigger {
+            color: var(--brand-blue);
+            background: none;
+            border: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .history-trigger:hover {
+            text-decoration: underline;
+        }
+
+        /* Feedback / Error Message */
+        .feedback-banner {
+            display: none;
+            background: var(--danger-bg);
+            border: 1px solid rgba(220, 38, 38, 0.25);
+            color: var(--danger-red);
+            padding: 0.9rem 1.25rem;
+            border-radius: var(--radius-md);
+            font-size: 0.92rem;
+            font-weight: 500;
+            margin-top: 1.25rem;
             align-items: center;
             gap: 0.6rem;
         }
 
-        .inline-feedback.error {
-            background: var(--danger-bg);
-            border: 1px solid rgba(217, 45, 32, 0.2);
-            color: var(--danger-red);
-        }
-
-        /* Quick Samples / Suggestions */
-        .samples-row {
-            max-width: 720px;
-            margin: 0 auto 2.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        .samples-label {
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            margin-right: 0.2rem;
-        }
-
-        .sample-pill {
-            background: var(--surface-main);
-            border: 1px solid var(--border-color);
-            color: var(--text-body);
-            padding: 0.35rem 0.75rem;
-            border-radius: var(--radius-sm);
-            font-size: 0.82rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.15s ease;
-        }
-
-        .sample-pill:hover {
-            border-color: var(--brand-blue);
-            color: var(--brand-blue);
-            background: var(--secondary-blue);
-        }
-
-        /* Loading State */
-        .loading-box {
+        /* Search History Dropdown / Panel */
+        .history-panel {
             display: none;
-            text-align: center;
-            padding: 3.5rem 1rem;
-            background: var(--surface-main);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            max-width: 720px;
-            margin: 0 auto 2rem;
-            box-shadow: var(--shadow-subtle);
-        }
-
-        .spinner {
-            width: 36px;
-            height: 36px;
-            border: 3px solid rgba(49, 87, 213, 0.15);
-            border-top: 3px solid var(--brand-blue);
-            border-radius: 50%;
-            animation: spin 0.75s linear infinite;
-            margin: 0 auto 1rem;
-        }
-
-        @keyframes spin {
-            100% { transform: rotate(360deg); }
-        }
-
-        .loading-title {
-            font-size: 1.05rem;
-            font-weight: 600;
-            color: var(--primary-navy);
-            margin-bottom: 0.25rem;
-        }
-
-        .loading-desc {
-            font-size: 0.88rem;
-            color: var(--text-muted);
-        }
-
-        /* Recent Searches Section */
-        .recent-searches-box {
-            max-width: 720px;
-            margin: 0 auto 2.5rem;
-            background: var(--surface-main);
+            margin-top: 1.25rem;
+            padding: 1.1rem 1.25rem;
+            background: var(--surface-subtle);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
-            padding: 1.1rem 1.3rem;
-            box-shadow: var(--shadow-subtle);
-            display: none;
         }
 
-        .recent-header {
+        .history-panel-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 0.8rem;
-        }
-
-        .recent-title {
+            margin-bottom: 0.75rem;
             font-size: 0.82rem;
             font-weight: 700;
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            color: var(--text-muted);
         }
 
-        .clear-history-btn {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-size: 0.8rem;
-            font-weight: 500;
-            cursor: pointer;
-            text-decoration: underline;
-        }
-
-        .clear-history-btn:hover {
-            color: var(--danger-red);
-        }
-
-        .recent-list {
+        .history-items-row {
             display: flex;
             gap: 0.5rem;
             flex-wrap: wrap;
         }
 
-        .recent-item {
-            background: var(--bg-primary);
+        .history-tag {
+            background: var(--surface-main);
             border: 1px solid var(--border-color);
-            padding: 0.4rem 0.8rem;
+            padding: 0.35rem 0.75rem;
             border-radius: var(--radius-sm);
             font-size: 0.82rem;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 0.4rem;
-            transition: all 0.15s;
         }
 
-        .recent-item:hover {
+        .history-tag:hover {
             border-color: var(--brand-blue);
             color: var(--brand-blue);
-            background: var(--secondary-blue);
         }
 
-        /* Profile Layout */
-        .profile-wrapper {
+        /* Loading Skeleton State */
+        .loader-card {
             display: none;
-            animation: fadeIn 0.3s ease-out forwards;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Identity Header Card */
-        .identity-card {
             background: var(--surface-main);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
-            padding: 2rem;
-            margin-bottom: 1.75rem;
-            box-shadow: var(--shadow-card);
+            padding: 3.5rem 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
         }
 
-        .identity-top {
+        .loader-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(37, 99, 235, 0.15);
+            border-top: 3px solid var(--brand-blue);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 1.1rem;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .loader-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--primary-navy);
+            margin-bottom: 0.3rem;
+        }
+
+        .loader-sub {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Company Profile Full Screen Dashboard */
+        .profile-dashboard {
+            display: none;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Header Identity Card */
+        .profile-header-card {
+            background: var(--surface-main);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2.25rem;
+            margin-bottom: 1.75rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .profile-header-flex {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
+            gap: 2rem;
+            margin-bottom: 1.75rem;
+            flex-wrap: wrap;
         }
 
-        .identity-left {
+        .profile-identity-main {
             display: flex;
-            align-items: flex-start;
-            gap: 1.25rem;
+            align-items: center;
+            gap: 1.5rem;
         }
 
-        .company-avatar {
-            width: 56px;
-            height: 56px;
-            background: var(--secondary-blue);
-            border: 1px solid rgba(49, 87, 213, 0.2);
+        .avatar-initials {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--brand-blue-light) 0%, #DBEAFE 100%);
+            border: 1.5px solid var(--brand-blue-border);
             color: var(--brand-blue);
             border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.35rem;
-            font-weight: 700;
+            font-size: 1.6rem;
+            font-weight: 800;
             flex-shrink: 0;
+            box-shadow: var(--shadow-sm);
         }
 
-        .company-name-heading {
-            font-size: 1.85rem;
+        .company-heading-title {
+            font-size: 2.15rem;
             font-weight: 800;
             color: var(--primary-navy);
-            letter-spacing: -0.02em;
+            letter-spacing: -0.03em;
             line-height: 1.2;
-            margin-bottom: 0.4rem;
+            margin-bottom: 0.5rem;
         }
 
-        .org-id-row {
+        .company-badges-line {
             display: flex;
             align-items: center;
-            gap: 0.6rem;
+            gap: 0.75rem;
             flex-wrap: wrap;
         }
 
-        .org-pill {
+        .badge-mono-org {
             font-family: 'JetBrains Mono', monospace;
-            background: var(--bg-primary);
+            background: var(--surface-subtle);
             border: 1px solid var(--border-color);
             color: var(--primary-navy);
-            padding: 0.25rem 0.65rem;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-
-        .copy-chip-btn {
-            background: var(--bg-primary);
-            border: 1px solid var(--border-color);
-            color: var(--text-body);
-            padding: 0.25rem 0.65rem;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-            transition: all 0.15s ease;
-        }
-
-        .copy-chip-btn:hover {
-            border-color: var(--brand-blue);
-            color: var(--brand-blue);
-        }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
-            padding: 0.4rem 0.95rem;
-            border-radius: var(--radius-pill);
-            font-size: 0.82rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.95rem;
             font-weight: 700;
-            letter-spacing: 0.02em;
+            letter-spacing: 0.03em;
         }
 
-        .status-badge.active {
-            background: var(--success-green-bg);
-            color: var(--success-green);
-            border: 1px solid rgba(22, 128, 93, 0.25);
-        }
-
-        .status-badge.inactive {
-            background: var(--danger-bg);
-            color: var(--danger-red);
-            border: 1px solid rgba(217, 45, 32, 0.25);
-        }
-
-        .status-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: currentColor;
-        }
-
-        /* Action Buttons Toolbar */
-        .actions-toolbar {
-            display: flex;
-            align-items: center;
-            gap: 0.65rem;
-            border-top: 1px solid var(--border-color);
-            padding-top: 1.25rem;
-            flex-wrap: wrap;
-        }
-
-        .action-button {
-            background: var(--surface-main);
-            border: 1px solid var(--border-color);
-            color: var(--text-body);
-            padding: 0.5rem 0.95rem;
+        .badge-type-tag {
+            background: var(--brand-blue-light);
+            border: 1px solid var(--brand-blue-border);
+            color: var(--brand-blue);
+            padding: 0.3rem 0.75rem;
             border-radius: var(--radius-sm);
             font-size: 0.85rem;
             font-weight: 600;
+        }
+
+        .status-pill-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1.2rem;
+            border-radius: 9999px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .status-pill-badge.active {
+            background: var(--success-bg);
+            color: var(--success-green);
+            border: 1px solid rgba(5, 150, 105, 0.3);
+        }
+
+        .status-pill-badge.inactive {
+            background: var(--danger-bg);
+            color: var(--danger-red);
+            border: 1px solid rgba(220, 38, 38, 0.3);
+        }
+
+        /* 4 Key KPI Metric Boxes */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+            margin-bottom: 1.75rem;
+        }
+
+        @media (max-width: 1024px) {
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 640px) {
+            .kpi-grid { grid-template-columns: 1fr; }
+        }
+
+        .kpi-box {
+            background: var(--surface-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 1.2rem 1.4rem;
+        }
+
+        .kpi-title {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.4rem;
+        }
+
+        .kpi-value {
+            font-size: 1.45rem;
+            font-weight: 800;
+            color: var(--primary-navy);
+            letter-spacing: -0.02em;
+        }
+
+        /* Executive Briefing Callout */
+        .executive-briefing {
+            background: #F8FAFC;
+            border-left: 4px solid var(--brand-blue);
+            padding: 1.25rem 1.5rem;
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--text-body);
+            margin-bottom: 1.75rem;
+        }
+
+        .briefing-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--brand-blue);
+            margin-bottom: 0.35rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        /* Actions Toolbar */
+        .toolbar-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1.4rem;
+            flex-wrap: wrap;
+        }
+
+        .tool-btn {
+            background: var(--surface-main);
+            border: 1px solid var(--border-color);
+            color: var(--text-body);
+            padding: 0.55rem 1.1rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.88rem;
+            font-weight: 600;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 0.45rem;
+            gap: 0.5rem;
             transition: all 0.15s ease;
         }
 
-        .action-button:hover {
-            background: var(--bg-primary);
-            border-color: #cbd5e1;
+        .tool-btn:hover {
+            background: var(--surface-subtle);
+            border-color: var(--border-hover);
             color: var(--primary-navy);
         }
 
-        /* Two-Column Responsive Layout */
-        .layout-grid {
+        /* Full Screen 3-Column Enterprise Dashboard Layout */
+        .dashboard-grid-3col {
             display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 1.5rem;
+            grid-template-columns: 1fr 1fr 1.25fr;
+            gap: 1.75rem;
+            align-items: start;
         }
 
-        @media (max-width: 860px) {
-            .layout-grid {
-                grid-template-columns: 1fr;
+        @media (max-width: 1280px) {
+            .dashboard-grid-3col {
+                grid-template-columns: 1fr 1fr;
+            }
+            .dashboard-grid-3col > div:nth-child(3) {
+                grid-column: span 2;
             }
         }
 
-        /* Section Card */
-        .info-card {
+        @media (max-width: 860px) {
+            .dashboard-grid-3col {
+                grid-template-columns: 1fr;
+            }
+            .dashboard-grid-3col > div:nth-child(3) {
+                grid-column: span 1;
+            }
+        }
+
+        /* Standard Dashboard Card */
+        .dash-card {
             background: var(--surface-main);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            box-shadow: var(--shadow-card);
+            padding: 1.75rem;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 1.75rem;
         }
 
-        .info-card-header {
+        .dash-card-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 1.1rem;
-            padding-bottom: 0.8rem;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.85rem;
             border-bottom: 1px solid var(--border-color);
         }
 
-        .info-card-title {
-            font-size: 1.05rem;
+        .dash-card-title {
+            font-size: 1.1rem;
             font-weight: 700;
             color: var(--primary-navy);
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.6rem;
         }
 
-        .data-rows {
+        .dash-card-title span.icon {
+            font-size: 1.2rem;
+        }
+
+        /* Key-Value Attribute Rows */
+        .prop-list {
             display: flex;
             flex-direction: column;
-            gap: 0.95rem;
+            gap: 1.1rem;
         }
 
-        .data-row {
+        .prop-item {
             display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            gap: 1rem;
-            font-size: 0.92rem;
+            flex-direction: column;
+            gap: 0.25rem;
         }
 
-        .data-key {
-            color: var(--text-muted);
-            font-weight: 500;
-            min-width: 140px;
-        }
-
-        .data-val {
-            color: var(--primary-navy);
+        .prop-label {
+            font-size: 0.8rem;
             font-weight: 600;
-            text-align: right;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .prop-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--primary-navy);
             word-break: break-word;
         }
 
-        .data-val.unavail {
-            color: #98A2B3;
-            font-weight: 400;
-            font-style: italic;
+        .prop-value.mono {
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 0.03em;
         }
 
-        .data-val a {
+        .prop-value a {
             color: var(--brand-blue);
             text-decoration: none;
         }
 
-        .data-val a:hover {
+        .prop-value a:hover {
             text-decoration: underline;
         }
 
-        /* Executive Summary Box */
-        .summary-box {
-            background: #F8FAFC;
-            border-left: 4px solid var(--brand-blue);
-            padding: 1rem 1.25rem;
-            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-            font-size: 0.95rem;
-            color: #334155;
-            line-height: 1.6;
-            margin-bottom: 1.25rem;
+        .prop-value.empty-val {
+            color: #94A3B8;
+            font-weight: 400;
+            font-style: italic;
         }
 
-        /* Verified Evidence Accordion / List */
-        .evidence-item {
+        /* Verified Evidence Feed Cards */
+        .evidence-feed {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .evidence-card {
             border: 1px solid var(--border-color);
-            border-radius: var(--radius-sm);
-            padding: 0.9rem 1.1rem;
-            margin-bottom: 0.75rem;
-            background: var(--surface-main);
-            transition: border-color 0.15s;
+            border-radius: var(--radius-md);
+            padding: 1rem 1.2rem;
+            background: var(--surface-subtle);
+            transition: all 0.15s ease;
         }
 
-        .evidence-item:hover {
-            border-color: #cbd5e1;
+        .evidence-card:hover {
+            background: #ffffff;
+            border-color: var(--brand-blue-border);
+            box-shadow: var(--shadow-sm);
         }
 
-        .evidence-head {
+        .evidence-card-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 0.35rem;
+            margin-bottom: 0.4rem;
         }
 
-        .evidence-key {
-            font-size: 0.76rem;
+        .evidence-tag-key {
+            font-size: 0.78rem;
             text-transform: uppercase;
             font-weight: 700;
             letter-spacing: 0.05em;
             color: var(--brand-blue);
         }
 
-        .evidence-confidence {
+        .evidence-score-badge {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.72rem;
-            font-weight: 600;
+            font-size: 0.75rem;
+            font-weight: 700;
             color: var(--success-green);
-            background: var(--success-green-bg);
-            padding: 0.15rem 0.5rem;
+            background: var(--success-bg);
+            border: 1px solid rgba(5, 150, 105, 0.2);
+            padding: 0.15rem 0.55rem;
             border-radius: 4px;
         }
 
-        .evidence-value {
-            font-size: 0.95rem;
-            font-weight: 600;
+        .evidence-content-val {
+            font-size: 1rem;
+            font-weight: 700;
             color: var(--primary-navy);
-            margin-bottom: 0.4rem;
+            margin-bottom: 0.35rem;
         }
 
-        .evidence-footer {
+        .evidence-desc {
+            font-size: 0.84rem;
+            color: var(--text-muted);
+            line-height: 1.45;
+            margin-bottom: 0.65rem;
+        }
+
+        .evidence-link-footer {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.75rem;
-            color: var(--text-muted);
+            font-size: 0.78rem;
             border-top: 1px dashed var(--border-color);
-            padding-top: 0.45rem;
-            margin-top: 0.45rem;
+            padding-top: 0.55rem;
         }
 
-        .evidence-footer a {
+        .evidence-link-footer a {
             color: var(--brand-blue);
             text-decoration: none;
-            font-weight: 500;
+            font-weight: 600;
         }
 
-        .evidence-footer a:hover {
+        .evidence-link-footer a:hover {
             text-decoration: underline;
         }
 
-        /* Toast Notification */
-        .toast {
+        .evidence-timestamp {
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.74rem;
+        }
+
+        /* Toast Popup */
+        .toast-msg-box {
             position: fixed;
             bottom: 2rem;
             right: 2rem;
             background: var(--primary-navy);
             color: #ffffff;
-            padding: 0.75rem 1.25rem;
+            padding: 0.85rem 1.4rem;
             border-radius: var(--radius-md);
-            font-size: 0.9rem;
-            font-weight: 500;
-            box-shadow: var(--shadow-elevated);
+            font-size: 0.92rem;
+            font-weight: 600;
+            box-shadow: var(--shadow-lg);
             display: none;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.6rem;
             z-index: 1000;
-            animation: slideUp 0.25s ease-out;
+            animation: slideIn 0.25s ease-out;
         }
 
-        @keyframes slideUp {
-            from { transform: translateY(15px); opacity: 0; }
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
 
-        /* Footer */
-        footer {
+        /* Clean SaaS Footer */
+        .footer-bar {
             background: var(--surface-main);
             border-top: 1px solid var(--border-color);
-            padding: 2.25rem 1.5rem;
+            padding: 2rem 2rem;
             margin-top: auto;
+            width: 100%;
         }
 
         .footer-inner {
-            max-width: 1160px;
+            max-width: 1680px;
             margin: 0 auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.85rem;
+            font-size: 0.88rem;
             color: var(--text-muted);
             flex-wrap: wrap;
             gap: 1rem;
         }
 
-        .footer-source {
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-        }
-
-        .footer-source strong {
+        .footer-inner strong {
             color: var(--primary-navy);
-        }
-
-        /* Empty State */
-        .empty-guidance {
-            background: var(--surface-main);
-            border: 1px dashed var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 2.5rem 1.5rem;
-            text-align: center;
-            max-width: 720px;
-            margin: 0 auto;
-        }
-
-        .guidance-icon {
-            font-size: 2.2rem;
-            margin-bottom: 0.6rem;
-        }
-
-        .guidance-title {
-            font-size: 1.05rem;
-            font-weight: 700;
-            color: var(--primary-navy);
-            margin-bottom: 0.35rem;
-        }
-
-        .guidance-text {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            max-width: 480px;
-            margin: 0 auto;
         }
     </style>
 </head>
 <body>
 
-    <!-- Top Navigation -->
-    <header class="navbar">
-        <div class="nav-inner">
-            <a href="/" class="brand-block">
-                <div class="brand-icon-box">⚡</div>
-                <div class="brand-name">Signalpost <span>NordIntel</span></div>
-            </a>
+    <!-- Top Navigation Bar -->
+    <header class="topbar">
+        <div class="topbar-content">
+            <div class="brand-zone">
+                <a href="/" class="brand-link">
+                    <div class="brand-symbol">⚡</div>
+                    <div class="brand-title">Signalpost <span>NordIntel</span></div>
+                </a>
+                <div class="brand-tagline">Autonomous Enterprise Intelligence</div>
+            </div>
 
-            <div class="nav-links">
-                <a href="#search" class="nav-link active">Search</a>
-                <a href="javascript:void(0)" onclick="toggleHistoryView()" class="nav-link">Search History</a>
-                <a href="https://data.brreg.no/enhetsregisteret/api" target="_blank" rel="noopener noreferrer" class="nav-link">Data Sources</a>
-                <div class="norway-indicator">
-                    <span>🇳🇴</span> Norway Enterprise Register
+            <div class="topbar-actions">
+                <div class="country-pill">
+                    <span class="live-dot"></span>
+                    <span>🇳🇴</span> Brønnøysundregistrene Live API
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- Main Application Wrapper -->
-    <main class="main-wrapper">
-        <!-- Hero Section -->
-        <section class="hero-section" id="search">
-            <div class="hero-badge">
-                <span>🇳🇴</span> NORWAY BUSINESS INTELLIGENCE
-            </div>
-            <h1 class="hero-heading">Know Every Company Behind the Number.</h1>
-            <p class="hero-subheading">
-                Search a Norwegian organization's 9-digit number to explore its company profile, registration details, business information, and available public records.
-            </p>
-        </section>
+    <!-- Main Full-Width Dashboard -->
+    <main class="dashboard-container">
 
-        <!-- Search Experience -->
-        <div class="search-container">
-            <div class="search-card">
-                <div class="search-input-wrapper">
-                    <span class="flag-icon">🇳🇴</span>
+        <!-- Search & Control Panel -->
+        <section class="search-panel">
+            <div class="search-panel-top">
+                <div class="hero-text">
+                    <div class="badge-mini">
+                        <span>🇳🇴</span> NORWAY BUSINESS INTELLIGENCE
+                    </div>
+                    <h1>Know Every Company Behind the Number.</h1>
+                    <p>Enter any Norwegian organization's 9-digit number to instantly retrieve verified corporate profiles, legal status, NACE classifications, employee headcounts, and registered public records.</p>
+                </div>
+            </div>
+
+            <!-- Search Row -->
+            <div class="search-row">
+                <div class="input-box">
+                    <span class="input-flag">🇳🇴</span>
                     <input 
                         type="text" 
                         id="orgInput" 
-                        class="search-input" 
-                        placeholder="Enter 9-digit organization number" 
+                        class="org-input" 
+                        placeholder="Enter 9-digit organization number (e.g. 923 609 016)" 
                         maxlength="14"
                         autocomplete="off"
-                        aria-label="Norwegian Organization Number"
                     >
                 </div>
-                <button class="find-btn" id="findBtn" onclick="handleSearchClick()">
+                <button class="btn-search" id="btnSearch" onclick="handleSearchClick()">
                     <span>🔍</span> Find Company
                 </button>
             </div>
-        </div>
 
-        <!-- Inline Error Feedback -->
-        <div class="inline-feedback error" id="inlineError">
-            <span style="font-size: 1.1rem;">⚠️</span>
-            <span id="inlineErrorText">Please enter a valid 9-digit Norwegian organization number.</span>
-        </div>
-
-        <!-- Quick Sample Suggestions -->
-        <div class="samples-row">
-            <span class="samples-label">Popular Enterprises:</span>
-            <button class="sample-pill" onclick="quickFill('923 609 016')">Equinor ASA (923 609 016)</button>
-            <button class="sample-pill" onclick="quickFill('916 627 939')">Palmera (916 627 939)</button>
-            <button class="sample-pill" onclick="quickFill('989 061 593')">G-Group AS (989 061 593)</button>
-            <button class="sample-pill" onclick="quickFill('988 539 473')">EBE-Data (988 539 473)</button>
-        </div>
-
-        <!-- Recent Search History Box -->
-        <div class="recent-searches-box" id="recentSearchesBox">
-            <div class="recent-header">
-                <span class="recent-title">Recent Searches</span>
-                <button class="clear-history-btn" onclick="clearSearchHistory()">Clear History</button>
+            <!-- Chips & Options Bar -->
+            <div class="quick-bar">
+                <div class="chips-list">
+                    <span class="chip-label">Verified Enterprises:</span>
+                    <button class="chip-button" onclick="quickFill('923 609 016')">Equinor ASA (923 609 016)</button>
+                    <button class="chip-button" onclick="quickFill('916 627 939')">Palmera (916 627 939)</button>
+                    <button class="chip-button" onclick="quickFill('989 061 593')">G-Group AS (989 061 593)</button>
+                    <button class="chip-button" onclick="quickFill('988 539 473')">EBE-Data (988 539 473)</button>
+                </div>
+                <button class="history-trigger" onclick="toggleHistoryView()">
+                    <span>🕒</span> Recent Searches
+                </button>
             </div>
-            <div class="recent-list" id="recentList"></div>
-        </div>
+
+            <!-- Error Banner -->
+            <div class="feedback-banner" id="errorBanner">
+                <span style="font-size: 1.2rem;">⚠️</span>
+                <span id="errorBannerText">Please enter a valid 9-digit Norwegian organization number.</span>
+            </div>
+
+            <!-- Recent Searches History Tray -->
+            <div class="history-panel" id="historyPanel">
+                <div class="history-panel-header">
+                    <span>Recent Searches</span>
+                    <button style="background:none; border:none; color:var(--danger-red); cursor:pointer; font-size:0.8rem; font-weight:600;" onclick="clearSearchHistory()">Clear All</button>
+                </div>
+                <div class="history-items-row" id="historyItems"></div>
+            </div>
+        </section>
 
         <!-- Loading State -->
-        <div class="loading-box" id="loadingState">
-            <div class="spinner"></div>
-            <div class="loading-title">Looking up company information...</div>
-            <div class="loading-desc">Querying Brønnøysundregistrene & extracting verified registry facts</div>
+        <div class="loader-card" id="loaderBox">
+            <div class="loader-spinner"></div>
+            <div class="loader-title">Looking up company information...</div>
+            <div class="loader-sub">Querying Brønnøysundregistrene & extracting verified registry facts</div>
         </div>
 
-        <!-- Empty Guidance State -->
-        <div class="empty-guidance" id="emptyGuidance">
-            <div class="guidance-icon">🏢</div>
-            <div class="guidance-title">Enter any 9-digit Norwegian Organization Number</div>
-            <div class="guidance-text">
-                Every business entity registered in Norway has a unique 9-digit identifier. Enter the number with or without spaces to see complete verified public records.
-            </div>
-        </div>
-
-        <!-- Company Profile Layout -->
-        <div class="profile-wrapper" id="profileView">
-            <!-- Identity Header Card -->
-            <div class="identity-card">
-                <div class="identity-top">
-                    <div class="identity-left">
-                        <div class="company-avatar" id="compAvatar">EQ</div>
+        <!-- 3-Column Enterprise Dashboard Profile View -->
+        <div class="profile-dashboard" id="profileDashboard">
+            
+            <!-- Company Identity Header Card -->
+            <div class="profile-header-card">
+                <div class="profile-header-flex">
+                    <div class="profile-identity-main">
+                        <div class="avatar-initials" id="compInitials">EQ</div>
                         <div>
-                            <h2 class="company-name-heading" id="compName">-</h2>
-                            <div class="org-id-row">
-                                <span class="org-pill" id="compOrgDisplay">ORG: -</span>
-                                <button class="copy-chip-btn" onclick="copyOrgNumber()">
-                                    <span>📋</span> Copy Org Nr
-                                </button>
-                                <span class="org-pill" id="compTypeTag" style="color: var(--brand-blue);">-</span>
+                            <h2 class="company-heading-title" id="compName">-</h2>
+                            <div class="company-badges-line">
+                                <span class="badge-mono-org" id="compOrgBadge">ORG: -</span>
+                                <span class="badge-type-tag" id="compTypeTag">-</span>
                             </div>
                         </div>
                     </div>
-                    <div class="status-badge active" id="compStatusBadge">
-                        <span class="status-dot"></span>
-                        <span id="compStatusLabel">ACTIVE</span>
+                    <div class="status-pill-badge active" id="compStatusPill">
+                        <span class="live-dot"></span>
+                        <span id="compStatusText">ACTIVE & REGISTERED</span>
                     </div>
                 </div>
 
-                <!-- Executive Summary -->
-                <div class="summary-box" id="compSummaryText">-</div>
+                <!-- 4 KPI Metrics -->
+                <div class="kpi-grid">
+                    <div class="kpi-box">
+                        <div class="kpi-title">Registered Headcount</div>
+                        <div class="kpi-value" id="kpiEmployees">-</div>
+                    </div>
+                    <div class="kpi-box">
+                        <div class="kpi-title">Registration Date</div>
+                        <div class="kpi-value" id="kpiFounded">-</div>
+                    </div>
+                    <div class="kpi-box">
+                        <div class="kpi-title">Headquarters Location</div>
+                        <div class="kpi-value" id="kpiCity">-</div>
+                    </div>
+                    <div class="kpi-box">
+                        <div class="kpi-title">Registry Verification</div>
+                        <div class="kpi-value" style="color: var(--brand-blue);">100% Proven</div>
+                    </div>
+                </div>
 
-                <!-- Action Toolbar -->
-                <div class="actions-toolbar">
-                    <button class="action-button" onclick="copyCompanyName()">
+                <!-- Executive Briefing -->
+                <div class="executive-briefing">
+                    <div class="briefing-label">
+                        <span>🧠</span> Agent Executive Summary & Explanation
+                    </div>
+                    <p id="compSummaryText">-</p>
+                </div>
+
+                <!-- Quick Action Toolbar -->
+                <div class="toolbar-row">
+                    <button class="tool-btn" onclick="copyOrgNumber()">
+                        <span>📋</span> Copy Org Number
+                    </button>
+                    <button class="tool-btn" onclick="copyCompanyName()">
                         <span>📋</span> Copy Company Name
                     </button>
-                    <button class="action-button" onclick="shareProfile()">
+                    <button class="tool-btn" onclick="shareProfile()">
                         <span>🔗</span> Share Profile
                     </button>
-                    <button class="action-button" onclick="exportJSON()">
+                    <button class="tool-btn" onclick="exportJSON()">
                         <span>📥</span> Export JSON Data
                     </button>
-                    <button class="action-button" onclick="window.print()">
+                    <button class="tool-btn" onclick="window.print()">
                         <span>🖨️</span> Print / Save PDF
                     </button>
                 </div>
             </div>
 
-            <!-- Two-Column Information Hierarchy -->
-            <div class="layout-grid">
-                <!-- Left Column -->
-                <div class="grid-col-left">
-                    <!-- 1. Company Overview & Registration Details -->
-                    <div class="info-card">
-                        <div class="info-card-header">
-                            <h3 class="info-card-title"><span>📋</span> Registration & Legal Details</h3>
-                        </div>
-                        <div class="data-rows">
-                            <div class="data-row">
-                                <span class="data-key">Legal Name</span>
-                                <span class="data-val" id="rowLegalName">-</span>
-                            </div>
-                            <div class="data-row">
-                                <span class="data-key">Organization Number</span>
-                                <span class="data-val" id="rowOrgNr" style="font-family: 'JetBrains Mono', monospace;">-</span>
-                            </div>
-                            <div class="data-row">
-                                <span class="data-key">Organization Form</span>
-                                <span class="data-val" id="rowOrgForm">-</span>
-                            </div>
-                            <div class="data-row">
-                                <span class="data-key">Registration Date</span>
-                                <span class="data-val" id="rowRegDate">-</span>
-                            </div>
-                            <div class="data-row">
-                                <span class="data-key">Operating Status</span>
-                                <span class="data-val" id="rowStatus">-</span>
-                            </div>
-                        </div>
+            <!-- 3-Column Balanced Dashboard Details -->
+            <div class="dashboard-grid-3col">
+                
+                <!-- Column 1: Legal & Registration Details -->
+                <div class="dash-card">
+                    <div class="dash-card-header">
+                        <h3 class="dash-card-title">
+                            <span class="icon">📋</span> Registration & Legal
+                        </h3>
                     </div>
-
-                    <!-- 2. Industry & Business Activity -->
-                    <div class="info-card">
-                        <div class="info-card-header">
-                            <h3 class="info-card-title"><span>📊</span> Industry & Business Activity</h3>
+                    <div class="prop-list">
+                        <div class="prop-item">
+                            <span class="prop-label">Full Legal Name</span>
+                            <span class="prop-value" id="rowLegalName">-</span>
                         </div>
-                        <div class="data-rows">
-                            <div class="data-row">
-                                <span class="data-key">NACE Industry Code</span>
-                                <span class="data-val" id="rowNaceCode">-</span>
-                            </div>
-                            <div class="data-row">
-                                <span class="data-key">Industry Description</span>
-                                <span class="data-val" id="rowNaceDesc">-</span>
-                            </div>
-                            <div class="data-row">
-                                <span class="data-key">Registered Headcount</span>
-                                <span class="data-val" id="rowEmployees">-</span>
-                            </div>
-                            <div class="data-row">
-                                <span class="data-key">Official Website</span>
-                                <span class="data-val" id="rowWebsite">-</span>
-                            </div>
+                        <div class="prop-item">
+                            <span class="prop-label">Organization Number</span>
+                            <span class="prop-value mono" id="rowOrgNr">-</span>
                         </div>
-                    </div>
-
-                    <!-- 3. Address & Location -->
-                    <div class="info-card">
-                        <div class="info-card-header">
-                            <h3 class="info-card-title"><span>📍</span> Address & Location</h3>
+                        <div class="prop-item">
+                            <span class="prop-label">Corporate Form</span>
+                            <span class="prop-value" id="rowOrgForm">-</span>
                         </div>
-                        <div class="data-rows">
-                            <div class="data-row">
-                                <span class="data-key">Business Address</span>
-                                <span class="data-val" id="rowBusinessAddr">-</span>
-                            </div>
-                            <div class="data-row">
-                                <span class="data-key">Municipality (Kommune)</span>
-                                <span class="data-val" id="rowMunicipality">-</span>
-                            </div>
-                            <div class="data-row">
-                                <span class="data-key">Postal Address</span>
-                                <span class="data-val" id="rowPostalAddr">-</span>
-                            </div>
-                            <div class="data-row">
-                                <span class="data-key">Country</span>
-                                <span class="data-val">Norway (Norge)</span>
-                            </div>
+                        <div class="prop-item">
+                            <span class="prop-label">Official Registration Date</span>
+                            <span class="prop-value" id="rowRegDate">-</span>
+                        </div>
+                        <div class="prop-item">
+                            <span class="prop-label">Operational Solvency</span>
+                            <span class="prop-value" id="rowSolvency">-</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Right Column: Verified Public Records & Evidence -->
-                <div class="grid-col-right">
-                    <div class="info-card">
-                        <div class="info-card-header">
-                            <h3 class="info-card-title"><span>🛡️</span> Verified Public Evidence</h3>
-                            <span style="font-size: 0.78rem; font-weight: 700; color: var(--success-green); background: var(--success-green-bg); padding: 0.2rem 0.5rem; border-radius: 4px;">Official Brønnøysund</span>
+                <!-- Column 2: Industry, Headcount & Location -->
+                <div class="dash-card">
+                    <div class="dash-card-header">
+                        <h3 class="dash-card-title">
+                            <span class="icon">📍</span> Operations & Location
+                        </h3>
+                    </div>
+                    <div class="prop-list">
+                        <div class="prop-item">
+                            <span class="prop-label">NACE Classification</span>
+                            <span class="prop-value" id="rowNaceCode">-</span>
                         </div>
-                        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5;">
-                            Every single fact extracted by this agent is linked with authentic public authority registries and verification timestamps.
-                        </p>
-                        <div id="evidenceList"></div>
+                        <div class="prop-item">
+                            <span class="prop-label">Industry Activity</span>
+                            <span class="prop-value" id="rowNaceDesc">-</span>
+                        </div>
+                        <div class="prop-item">
+                            <span class="prop-label">Registered Office Address</span>
+                            <span class="prop-value" id="rowBusinessAddr">-</span>
+                        </div>
+                        <div class="prop-item">
+                            <span class="prop-label">Municipality (Kommune)</span>
+                            <span class="prop-value" id="rowMunicipality">-</span>
+                        </div>
+                        <div class="prop-item">
+                            <span class="prop-label">Official Website</span>
+                            <span class="prop-value" id="rowWebsite">-</span>
+                        </div>
                     </div>
                 </div>
+
+                <!-- Column 3: Verified Registry Evidence Stream -->
+                <div class="dash-card">
+                    <div class="dash-card-header">
+                        <h3 class="dash-card-title">
+                            <span class="icon">🛡️</span> Verified Public Evidence
+                        </h3>
+                        <span style="font-size:0.75rem; font-weight:700; color:var(--success-green); background:var(--success-bg); padding:0.2rem 0.5rem; border-radius:4px;">100% Attributed</span>
+                    </div>
+                    <div class="evidence-feed" id="evidenceFeed"></div>
+                </div>
+
             </div>
+
         </div>
+
     </main>
 
     <!-- Toast Notification -->
-    <div class="toast" id="toastBox">
+    <div class="toast-msg-box" id="toastBox">
         <span id="toastIcon">✓</span>
-        <span id="toastMsg">Copied to clipboard!</span>
+        <span id="toastText">Copied to clipboard!</span>
     </div>
 
-    <!-- Clean SaaS Footer -->
-    <footer>
+    <!-- Full-Width Footer -->
+    <footer class="footer-bar">
         <div class="footer-inner">
-            <div class="footer-source">
-                <span>Data Source:</span>
-                <strong>Brønnøysundregistrene (Enhetsregisteret)</strong>
-                <span>• Official Norwegian Open Data API</span>
+            <div>
+                Data Source: <strong>Brønnøysundregistrene (Enhetsregisteret)</strong> • Official Open Government API
             </div>
             <div>
-                Signalpost <strong>NordIntel</strong> • Autonomous Corporate Intelligence Platform
+                Signalpost <strong>NordIntel</strong> • Enterprise Company Intelligence Platform
             </div>
         </div>
     </footer>
@@ -1095,65 +1169,6 @@ HTML_PAGE = """<!DOCTYPE html>
         const ERROR_MESSAGE = "Please enter a valid 9-digit Norwegian organization number.";
         const inputElem = document.getElementById('orgInput');
         let currentProfileData = null;
-
-        // Load search history from localStorage
-        function getSearchHistory() {
-            try {
-                return JSON.parse(localStorage.getItem('nordintel_recent_searches') || '[]');
-            } catch (e) {
-                return [];
-            }
-        }
-
-        function saveSearchHistory(org, name) {
-            try {
-                let history = getSearchHistory();
-                // Filter out duplicates
-                history = history.filter(item => item.org !== org);
-                history.unshift({ org, name, timestamp: Date.now() });
-                if (history.length > 6) history = history.slice(0, 6);
-                localStorage.setItem('nordintel_recent_searches', JSON.stringify(history));
-                renderSearchHistory();
-            } catch (e) {}
-        }
-
-        function clearSearchHistory() {
-            try {
-                localStorage.removeItem('nordintel_recent_searches');
-                renderSearchHistory();
-                showToast("Search history cleared");
-            } catch (e) {}
-        }
-
-        function renderSearchHistory() {
-            const history = getSearchHistory();
-            const container = document.getElementById('recentSearchesBox');
-            const list = document.getElementById('recentList');
-            if (!history || history.length === 0) {
-                container.style.display = 'none';
-                return;
-            }
-            container.style.display = 'block';
-            list.innerHTML = '';
-            history.forEach(item => {
-                const pill = document.createElement('div');
-                pill.className = 'recent-item';
-                pill.innerHTML = `<span>🏢</span> <strong>${item.name || 'Company'}</strong> (${formatOrgDisplay(item.org)})`;
-                pill.onclick = () => quickFill(item.org);
-                list.appendChild(pill);
-            });
-        }
-
-        function toggleHistoryView() {
-            const box = document.getElementById('recentSearchesBox');
-            if (box.style.display === 'none' || !box.style.display) {
-                renderSearchHistory();
-                box.style.display = 'block';
-                box.scrollIntoView({ behavior: 'smooth' });
-            } else {
-                box.style.display = 'none';
-            }
-        }
 
         // Normalization and validation
         function validateAndNormalizeOrg(raw) {
@@ -1178,7 +1193,7 @@ HTML_PAGE = """<!DOCTYPE html>
             return parts.join(' ');
         }
 
-        // Automatic spacing input formatting
+        // Auto-spacing while typing
         inputElem.addEventListener('input', function(e) {
             const cursorStart = this.selectionStart;
             const prevVal = this.value;
@@ -1212,22 +1227,21 @@ HTML_PAGE = """<!DOCTYPE html>
             if (e.key === 'Enter') handleSearchClick();
         });
 
-        function showInlineError(msg) {
-            const box = document.getElementById('inlineError');
-            const txt = document.getElementById('inlineErrorText');
-            txt.innerText = msg;
-            box.style.display = 'flex';
+        function showError(msg) {
+            const banner = document.getElementById('errorBanner');
+            document.getElementById('errorBannerText').innerText = msg;
+            banner.style.display = 'flex';
         }
 
-        function hideInlineError() {
-            document.getElementById('inlineError').style.display = 'none';
+        function hideError() {
+            document.getElementById('errorBanner').style.display = 'none';
         }
 
         function showToast(msg) {
             const toast = document.getElementById('toastBox');
-            document.getElementById('toastMsg').innerText = msg;
+            document.getElementById('toastText').innerText = msg;
             toast.style.display = 'flex';
-            setTimeout(() => { toast.style.display = 'none'; }, 3000);
+            setTimeout(() => { toast.style.display = 'none'; }, 2800);
         }
 
         function quickFill(org) {
@@ -1235,29 +1249,77 @@ HTML_PAGE = """<!DOCTYPE html>
             handleSearchClick();
         }
 
-        async function handleSearchClick() {
-            hideInlineError();
-            const rawVal = inputElem.value;
-            const validation = validateAndNormalizeOrg(rawVal);
+        // Local Search History
+        function getHistory() {
+            try {
+                return JSON.parse(localStorage.getItem('nordintel_searches') || '[]');
+            } catch (e) { return []; }
+        }
 
-            if (!validation.isValid) {
-                showInlineError(validation.error);
+        function saveHistory(org, name) {
+            try {
+                let h = getHistory();
+                h = h.filter(x => x.org !== org);
+                h.unshift({ org, name });
+                if (h.length > 8) h = h.slice(0, 8);
+                localStorage.setItem('nordintel_searches', JSON.stringify(h));
+                renderHistory();
+            } catch (e) {}
+        }
+
+        function clearSearchHistory() {
+            localStorage.removeItem('nordintel_searches');
+            renderHistory();
+            document.getElementById('historyPanel').style.display = 'none';
+            showToast("Search history cleared");
+        }
+
+        function renderHistory() {
+            const list = getHistory();
+            const container = document.getElementById('historyItems');
+            container.innerHTML = '';
+            if (list.length === 0) {
+                container.innerHTML = '<span style="color:var(--text-muted); font-size:0.85rem;">No recent searches yet.</span>';
                 return;
             }
+            list.forEach(item => {
+                const tag = document.createElement('div');
+                tag.className = 'history-tag';
+                tag.innerHTML = `<span>🏢</span> <strong>${item.name || 'Company'}</strong> (${formatOrgDisplay(item.org)})`;
+                tag.onclick = () => quickFill(item.org);
+                container.appendChild(tag);
+            });
+        }
 
+        function toggleHistoryView() {
+            const panel = document.getElementById('historyPanel');
+            if (panel.style.display === 'block') {
+                panel.style.display = 'none';
+            } else {
+                renderHistory();
+                panel.style.display = 'block';
+            }
+        }
+
+        async function handleSearchClick() {
+            hideError();
+            const raw = inputElem.value;
+            const validation = validateAndNormalizeOrg(raw);
+            if (!validation.isValid) {
+                showError(validation.error);
+                return;
+            }
             inputElem.value = formatOrgDisplay(validation.normalized);
             await searchCompany(validation.normalized);
         }
 
         async function searchCompany(normalizedOrg) {
-            const loader = document.getElementById('loadingState');
-            const profileView = document.getElementById('profileView');
-            const emptyGuidance = document.getElementById('emptyGuidance');
-            
+            const loader = document.getElementById('loaderBox');
+            const dashboard = document.getElementById('profileDashboard');
+
             loader.style.display = 'block';
-            profileView.style.display = 'none';
-            emptyGuidance.style.display = 'none';
-            hideInlineError();
+            dashboard.style.display = 'none';
+            hideError();
 
             try {
                 const res = await fetch(`/api/search?org=${encodeURIComponent(normalizedOrg)}`);
@@ -1265,120 +1327,130 @@ HTML_PAGE = """<!DOCTYPE html>
                 loader.style.display = 'none';
 
                 if (data.error) {
-                    showInlineError(data.error);
-                    emptyGuidance.style.display = 'block';
+                    showError(data.error);
                     return;
                 }
 
                 currentProfileData = data;
-                saveSearchHistory(normalizedOrg, data.company_name);
+                saveHistory(normalizedOrg, data.company_name);
 
-                // Populate Company Identity
-                const name = data.company_name || 'Unnamed Company';
+                // Populate Header
+                const name = data.company_name || 'Unnamed Enterprise';
                 document.getElementById('compName').innerText = name;
                 
-                // Initials Avatar
                 const initials = name.split(' ').map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'NO';
-                document.getElementById('compAvatar').innerText = initials;
+                document.getElementById('compInitials').innerText = initials;
 
                 const formattedOrg = formatOrgDisplay(data.org_number);
-                document.getElementById('compOrgDisplay').innerText = `ORG: ${formattedOrg}`;
+                document.getElementById('compOrgBadge').innerText = `ORG: ${formattedOrg}`;
                 document.getElementById('compTypeTag').innerText = data.org_type_description || data.org_type || 'Commercial Entity';
 
-                // Status Badge
-                const statusBadge = document.getElementById('compStatusBadge');
-                const statusLabel = document.getElementById('compStatusLabel');
+                // Status Pill
+                const pill = document.getElementById('compStatusPill');
+                const pillTxt = document.getElementById('compStatusText');
                 if (data.is_bankrupt) {
-                    statusBadge.className = 'status-badge inactive';
-                    statusLabel.innerText = 'BANKRUPT';
+                    pill.className = 'status-pill-badge inactive';
+                    pillTxt.innerText = 'BANKRUPT';
                 } else if (!data.is_active) {
-                    statusBadge.className = 'status-badge inactive';
-                    statusLabel.innerText = 'IN LIQUIDATION / INACTIVE';
+                    pill.className = 'status-pill-badge inactive';
+                    pillTxt.innerText = 'IN LIQUIDATION / INACTIVE';
                 } else {
-                    statusBadge.className = 'status-badge active';
-                    statusLabel.innerText = 'ACTIVE & REGISTERED';
+                    pill.className = 'status-pill-badge active';
+                    pillTxt.innerText = 'ACTIVE & REGISTERED';
                 }
 
-                // Summary
-                document.getElementById('compSummaryText').innerText = data.agent_summary || 'Company profile verified against Norwegian registry records.';
+                // 4 KPIs
+                document.getElementById('kpiEmployees').innerText = (data.employee_count !== null && data.employee_count !== undefined)
+                    ? Number(data.employee_count).toLocaleString() + ' Personnel'
+                    : 'Unlisted';
+                document.getElementById('kpiFounded').innerText = data.registration_date || 'N/A';
+                
+                let city = 'Norway';
+                if (data.business_address && data.business_address.poststed) {
+                    city = data.business_address.poststed;
+                } else if (data.facts) {
+                    const addrFact = data.facts.find(f => f.key === 'business_address');
+                    if (addrFact && addrFact.value) {
+                        const parts = addrFact.value.split(',');
+                        if (parts.length >= 3) city = parts[parts.length - 3].trim();
+                    }
+                }
+                document.getElementById('kpiCity').innerText = city;
 
-                // Information Table Data Rows
-                document.getElementById('rowLegalName').innerText = data.company_name || 'Not available';
+                // Briefing
+                document.getElementById('compSummaryText').innerText = data.agent_summary || 'Verified corporate profile extracted from official registers.';
+
+                // Column 1: Legal & Registration
+                document.getElementById('rowLegalName').innerText = name;
                 document.getElementById('rowOrgNr').innerText = formattedOrg;
                 document.getElementById('rowOrgForm').innerText = data.org_type_description ? `${data.org_type_description} (${data.org_type || ''})` : 'Not available';
                 document.getElementById('rowRegDate').innerText = data.registration_date || 'Not available';
-                document.getElementById('rowStatus').innerText = data.is_bankrupt ? 'Bankrupt' : (data.is_active ? 'Active / In Good Standing' : 'Under Liquidation');
+                document.getElementById('rowSolvency').innerText = data.is_bankrupt ? 'Bankrupt' : (data.is_active ? 'Active / In Good Standing' : 'In Liquidation');
 
-                // Industry & Business
+                // Column 2: Operations & Location
                 document.getElementById('rowNaceCode').innerText = data.industry_code || 'Not available in data source';
-                document.getElementById('rowNaceDesc').innerText = data.industry_description || 'Not available in data source';
-                document.getElementById('rowEmployees').innerText = (data.employee_count !== null && data.employee_count !== undefined) 
-                    ? `${Number(data.employee_count).toLocaleString()} registered employees` 
-                    : 'Not specified in registry';
-
-                const websiteCell = document.getElementById('rowWebsite');
-                if (data.website) {
-                    const cleanUrl = data.website.startsWith('http') ? data.website : `https://${data.website}`;
-                    websiteCell.innerHTML = `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer">${data.website}</a>`;
-                } else {
-                    websiteCell.innerHTML = `<span class="unavail">Not registered with authority</span>`;
-                }
-
-                // Address & Location
+                document.getElementById('rowNaceDesc').innerText = data.industry_description || 'General Corporate Sector';
+                
                 const bAddr = data.business_address || {};
                 let fullAddr = 'Not available in current data source';
-                let cityKommune = 'Not available';
+                let kommune = 'Not available';
                 if (bAddr && (bAddr.adresse || bAddr.poststed)) {
                     const street = Array.isArray(bAddr.adresse) ? bAddr.adresse.join(', ') : (bAddr.adresse || '');
                     fullAddr = [street, bAddr.postnummer, bAddr.poststed].filter(Boolean).join(', ');
-                    cityKommune = [bAddr.poststed, bAddr.kommune].filter(Boolean).join(', ');
+                    kommune = [bAddr.poststed, bAddr.kommune].filter(Boolean).join(', ');
                 } else if (data.facts) {
                     const factAddr = data.facts.find(f => f.key === 'business_address');
                     if (factAddr && factAddr.value) fullAddr = factAddr.value;
                 }
                 document.getElementById('rowBusinessAddr').innerText = fullAddr;
-                document.getElementById('rowMunicipality').innerText = cityKommune;
+                document.getElementById('rowMunicipality').innerText = kommune;
 
-                const pAddr = data.postal_address;
-                document.getElementById('rowPostalAddr').innerText = pAddr ? (Array.isArray(pAddr.adresse) ? pAddr.adresse.join(', ') : pAddr.poststed) : 'Same as business address';
+                const websiteBox = document.getElementById('rowWebsite');
+                if (data.website) {
+                    const cleanUrl = data.website.startsWith('http') ? data.website : `https://${data.website}`;
+                    websiteBox.innerHTML = `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer">${data.website}</a>`;
+                } else {
+                    websiteBox.innerHTML = `<span class="empty-val">Not registered with authority</span>`;
+                }
 
-                // Populate Verified Evidence List
-                const evidenceList = document.getElementById('evidenceList');
-                evidenceList.innerHTML = '';
+                // Column 3: Evidence Feed
+                const feed = document.getElementById('evidenceFeed');
+                feed.innerHTML = '';
                 const facts = data.facts || [];
                 facts.forEach(fact => {
-                    const item = document.createElement('div');
-                    item.className = 'evidence-item';
+                    const card = document.createElement('div');
+                    card.className = 'evidence-card';
                     const dateFormatted = fact.retrieved_at ? fact.retrieved_at.replace('T', ' ').substring(0, 16) + ' UTC' : 'Live';
-                    let displayVal = fact.value;
-                    if (fact.key === 'org_number') displayVal = formatOrgDisplay(displayVal);
+                    let val = fact.value;
+                    if (fact.key === 'org_number') val = formatOrgDisplay(val);
 
-                    item.innerHTML = `
-                        <div class="evidence-head">
-                            <span class="evidence-key">${fact.key.replace(/_/g, ' ')}</span>
-                            <span class="evidence-confidence">${Math.round((fact.confidence || 1.0) * 100)}% Confirmed</span>
+                    card.innerHTML = `
+                        <div class="evidence-card-top">
+                            <span class="evidence-tag-key">${fact.key.replace(/_/g, ' ')}</span>
+                            <span class="evidence-score-badge">${Math.round((fact.confidence || 1.0) * 100)}% Proven</span>
                         </div>
-                        <div class="evidence-value">${displayVal}</div>
-                        <div class="evidence-footer">
+                        <div class="evidence-content-val">${val}</div>
+                        ${fact.explanation ? `<div class="evidence-desc">${fact.explanation}</div>` : ''}
+                        <div class="evidence-link-footer">
                             <a href="${fact.source_url}" target="_blank" rel="noopener noreferrer">
                                 🔗 ${fact.source_name}
                             </a>
-                            <span>${dateFormatted}</span>
+                            <span class="evidence-timestamp">${dateFormatted}</span>
                         </div>
                     `;
-                    evidenceList.appendChild(item);
+                    feed.appendChild(card);
                 });
 
-                profileView.style.display = 'block';
-                profileView.scrollIntoView({ behavior: 'smooth' });
+                dashboard.style.display = 'block';
+                dashboard.scrollIntoView({ behavior: 'smooth' });
+
             } catch (err) {
                 loader.style.display = 'none';
-                emptyGuidance.style.display = 'block';
-                showInlineError("We couldn't retrieve company information right now. Please try again.");
+                showError("We couldn't retrieve company information right now. Please try again.");
             }
         }
 
-        // Quick Actions
+        // Actions
         function copyOrgNumber() {
             if (!currentProfileData) return;
             const formatted = formatOrgDisplay(currentProfileData.org_number);
@@ -1397,7 +1469,7 @@ HTML_PAGE = """<!DOCTYPE html>
         function shareProfile() {
             if (!currentProfileData) return;
             const shareData = {
-                title: `${currentProfileData.company_name} — Norwegian Company Intelligence`,
+                title: `${currentProfileData.company_name} — Intelligence Profile`,
                 text: `Verified corporate profile for ${currentProfileData.company_name} (Org Nr: ${formatOrgDisplay(currentProfileData.org_number)})`,
                 url: window.location.href
             };
@@ -1405,7 +1477,7 @@ HTML_PAGE = """<!DOCTYPE html>
                 navigator.share(shareData).catch(() => {});
             } else {
                 navigator.clipboard.writeText(window.location.href).then(() => {
-                    showToast("Profile link copied to clipboard");
+                    showToast("Profile URL copied to clipboard");
                 });
             }
         }
@@ -1413,18 +1485,17 @@ HTML_PAGE = """<!DOCTYPE html>
         function exportJSON() {
             if (!currentProfileData) return;
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentProfileData, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `${currentProfileData.org_number}_profile.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `${currentProfileData.org_number}_profile.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
             showToast("JSON company record exported");
         }
 
-        // Initialize Search History on Load
         window.addEventListener('DOMContentLoaded', () => {
-            renderSearchHistory();
+            renderHistory();
         });
     </script>
 </body>
@@ -1443,7 +1514,6 @@ class AgentServerHandler(http.server.BaseHTTPRequestHandler):
             query = urllib.parse.parse_qs(parsed.query)
             raw_org = query.get("org", [None])[0]
             
-            # Intelligent normalization and validation at backend
             is_valid, clean_org, err_msg = normalize_org_number(raw_org)
             if not is_valid:
                 self.send_response(400)
@@ -1468,7 +1538,7 @@ if __name__ == "__main__":
     PORT = 8000
     server_address = ('127.0.0.1', PORT)
     httpd = socketserver.TCPServer(server_address, AgentServerHandler)
-    print(f"[*] Signalpost NordIntel SaaS Platform running at http://localhost:{PORT}")
+    print(f"[*] Signalpost NordIntel Full-Screen Platform running at http://localhost:{PORT}")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
