@@ -1,4 +1,4 @@
-import re
+import re 
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 from .models import CompanyProfile, FactWithEvidence, ChangeRecord
