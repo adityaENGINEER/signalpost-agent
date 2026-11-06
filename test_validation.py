@@ -1,4 +1,4 @@
-from agent.validator import normalize_org_number, format_org_number
+ from agent.validator import normalize_org_number, format_org_number
 
 cases = [
     ("923 456 789", True, "923456789"),
