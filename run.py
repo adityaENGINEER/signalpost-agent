@@ -3,7 +3,7 @@ import json
 import sys
 from agent.core import SignalpostAgent
 from agent.batch_generator import generate_1000_profiles
-from agent.validator import normalize_org_number
+from agent.validator import normalize_org_number 
 
 def main():
     parser = argparse.ArgumentParser(
